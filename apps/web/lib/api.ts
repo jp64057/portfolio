@@ -1,0 +1,42 @@
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+
+export interface GithubStats {
+  publicRepos: number
+  totalStars: number
+  followers: number
+  topLanguages: { name: string; pct: number }[]
+}
+
+export async function fetchGithubStats(): Promise<GithubStats> {
+  const res = await fetch(`${BASE}/api/github-stats`, { next: { revalidate: 900 } })
+  if (!res.ok) throw new Error('Failed to fetch GitHub stats')
+  return res.json()
+}
+
+export async function trackVisit(page: string): Promise<number> {
+  const res = await fetch(`${BASE}/api/visit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ page }),
+  })
+  if (!res.ok) throw new Error('Visit tracking failed')
+  const data = await res.json()
+  return data.count as number
+}
+
+export async function sendContact(body: {
+  name: string
+  email: string
+  message: string
+  honeypot: string
+}): Promise<Response> {
+  return fetch(`${BASE}/api/contact`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+export async function trackResumeDownload(): Promise<void> {
+  await fetch(`${BASE}/api/resume-download`, { method: 'POST' }).catch(() => {})
+}

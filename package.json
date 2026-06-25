@@ -1,0 +1,14 @@
+{
+  "name": "portfolio",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm --filter web lint && pnpm --filter api lint",
+    "test": "pnpm --filter api test"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  }
+}

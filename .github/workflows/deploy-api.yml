@@ -46,7 +46,7 @@ jobs:
         run: |
           for fn in api/dist/*/; do
             name=$(basename "$fn")
-            (cd "$fn" && zip -r "handler.zip" handler.mjs)
+            (cd "$fn" && zip -r "handler.zip" handler.js)
             echo "Zipped $name"
           done
 

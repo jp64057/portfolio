@@ -11,8 +11,8 @@ await Promise.all(
       bundle: true,
       platform: 'node',
       target: 'node22',
-      format: 'esm',
-      outfile: `./dist/${fn}/handler.mjs`,
+      format: 'cjs',
+      outfile: `./dist/${fn}/handler.js`,
       external: [],
       minify: true,
     }).then(() => {

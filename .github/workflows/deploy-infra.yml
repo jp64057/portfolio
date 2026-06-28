@@ -27,6 +27,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: ${{ github.workspace }}
+
+      - name: Bundle Lambda functions
+        run: pnpm --filter api build
+        working-directory: ${{ github.workspace }}
+
+      - name: Zip Lambda bundles
+        working-directory: ${{ github.workspace }}
+        run: |
+          for fn in api/dist/*/; do
+            name=$(basename "$fn")
+            (cd "$fn" && zip handler.zip handler.mjs)
+            echo "zipped $name"
+          done
+
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
@@ -76,6 +101,31 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: ${{ github.workspace }}
+
+      - name: Bundle Lambda functions
+        run: pnpm --filter api build
+        working-directory: ${{ github.workspace }}
+
+      - name: Zip Lambda bundles
+        working-directory: ${{ github.workspace }}
+        run: |
+          for fn in api/dist/*/; do
+            name=$(basename "$fn")
+            (cd "$fn" && zip handler.zip handler.mjs)
+            echo "zipped $name"
+          done
 
       - uses: hashicorp/setup-terraform@v3
         with:

@@ -47,7 +47,7 @@ export function ContactForm() {
         <div className="text-center py-8">
           <p className="text-2xl mb-2">✓</p>
           <p className="font-medium">Message sent!</p>
-          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">I'll get back to you soon.</p>
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">I&apos;ll get back to you soon.</p>
           <button onClick={() => setStatus('idle')} className="mt-4 text-sm text-[hsl(var(--accent))] underline">
             Send another
           </button>

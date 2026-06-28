@@ -36,8 +36,8 @@ export const handler = async (_event: APIGatewayProxyEventV2): Promise<APIGatewa
 
   if (!userRes.ok || !reposRes.ok) return err('GitHub API error', 502)
 
-  const user = await userRes.json()
-  const repos: RepoData[] = await reposRes.json()
+  const user = await userRes.json() as { public_repos: number; followers: number }
+  const repos = await reposRes.json() as RepoData[]
 
   const totalStars = repos.reduce((sum, r) => sum + r.stargazers_count, 0)
 

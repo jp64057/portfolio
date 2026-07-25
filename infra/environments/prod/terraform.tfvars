@@ -1,6 +1,9 @@
 aws_region  = "us-east-1"
 github_repo = "jp64057/portfolio"
 
+root_domain = "prue.info"
+site_domain = "jacob.prue.info"
+
 # Fill these in before running terraform apply:
 ses_from_address = "jimmabapa@gmail.com"
 ses_to_address   = "jimmabapa@gmail.com"

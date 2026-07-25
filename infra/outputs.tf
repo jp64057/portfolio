@@ -17,3 +17,13 @@ output "api_endpoint" {
   description = "API Gateway base URL (set as NEXT_PUBLIC_API_URL in the frontend — leave empty if using CloudFront /api/* routing)"
   value       = module.api.api_endpoint
 }
+
+output "route53_name_servers" {
+  description = "Set these as the nameservers for prue.info at the registrar (GoDaddy)"
+  value       = module.dns.name_servers
+}
+
+output "route53_zone_id" {
+  description = "Route 53 hosted zone ID for prue.info"
+  value       = module.dns.zone_id
+}

@@ -19,6 +19,7 @@ export function Nav() {
           <Link href="#projects" className="hover:text-[hsl(var(--accent))] transition-colors">Projects</Link>
           <Link href="#skills" className="hover:text-[hsl(var(--accent))] transition-colors">Skills</Link>
           <Link href="#contact" className="hover:text-[hsl(var(--accent))] transition-colors">Contact</Link>
+          <Link href="/stats" className="hover:text-[hsl(var(--accent))] transition-colors">Stats</Link>
           <a
             href="https://github.com/jp64057"
             target="_blank"

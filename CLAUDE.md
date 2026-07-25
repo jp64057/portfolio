@@ -38,7 +38,8 @@ Gateway stage, or you run `sam local start-api`. In prod the frontend calls
 - **Site bucket:** `jp64057-portfolio-site`
 - **API Gateway v2 (HTTP):** `oba4jwe8k9` (`portfolio`), fronted at `/api/*`
 - **Lambdas (Node 22):** `portfolio-github-stats`, `portfolio-contact`,
-  `portfolio-resume-tracker`, `portfolio-visitor-counter`; exec role
+  `portfolio-resume-tracker`, `portfolio-visitor-counter`, `portfolio-stats`
+  (aggregates visitor/résumé counts for the `/stats` page); exec role
   `portfolio-lambda-exec`
 - **DynamoDB:** table `portfolio`
 - **Terraform state:** S3 `jp64057-portfolio-tfstate` + lock table

@@ -20,7 +20,11 @@ const SKILLS = [
 
 export function SkillsChart() {
   return (
-    <div className="rounded-xl border border-[hsl(var(--border))] p-6">
+    <div
+      className="rounded-xl border border-[hsl(var(--border))] p-6"
+      role="img"
+      aria-label={`Radar chart of self-assessed proficiency: ${SKILLS.map((s) => `${s.subject} ${s.score} out of 100`).join(', ')}.`}
+    >
       <ResponsiveContainer width="100%" height={320}>
         <RadarChart data={SKILLS}>
           <PolarGrid stroke="hsl(var(--border))" />

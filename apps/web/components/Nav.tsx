@@ -13,7 +13,7 @@ export function Nav() {
     <header className="sticky top-0 z-50 border-b border-[hsl(var(--border))] bg-[hsl(var(--background)/0.8)] backdrop-blur">
       <nav className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
         <Link href="/" className="font-mono font-bold tracking-tight">
-          jp64057
+          Jacob Prue
         </Link>
         <div className="flex items-center gap-6 text-sm">
           <Link href="#projects" className="hover:text-[hsl(var(--accent))] transition-colors">Projects</Link>

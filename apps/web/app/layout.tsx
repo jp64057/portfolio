@@ -8,10 +8,10 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 
 export const metadata: Metadata = {
-  title: 'jp64057 — Software Engineer',
+  title: 'Jacob Prue — Software Engineer',
   description: 'Full-stack engineer specializing in React, Node.js, and AWS infrastructure.',
   openGraph: {
-    title: 'jp64057 — Software Engineer',
+    title: 'Jacob Prue — Software Engineer',
     description: 'Full-stack engineer specializing in React, Node.js, and AWS infrastructure.',
     type: 'website',
   },

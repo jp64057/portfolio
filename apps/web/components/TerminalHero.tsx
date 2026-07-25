@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 const LINES = [
   '$ whoami',
-  'jp64057',
+  'Jacob Prue',
   '$ cat skills.txt',
   'Full-Stack Engineer | AWS | Terraform | TypeScript',
   '$ ls projects/',
@@ -65,7 +65,7 @@ export function TerminalHero() {
       </div>
       <div className="mt-8">
         <h1 className="text-4xl font-bold tracking-tight">
-          Hi, I&apos;m <span className="text-[hsl(var(--accent))]">jp64057</span>
+          Hi, I&apos;m <span className="text-[hsl(var(--accent))]">Jacob Prue</span>
         </h1>
         <p className="mt-3 text-lg text-[hsl(var(--muted-foreground))] max-w-xl">
           Full-stack engineer building scalable systems with React, Node.js, and AWS.

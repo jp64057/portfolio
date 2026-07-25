@@ -60,15 +60,19 @@ Gateway stage, or you run `sam local start-api`. In prod the frontend calls
 
 ## Gotchas / non-obvious facts
 
-- **Bootstrapped manually, NOT in Terraform:** the state bucket + lock table,
-  and the GitHub OIDC provider + two roles: `portfolio-github-actions`
-  (deploy-only: S3 site write, CloudFront invalidation, `lambda:UpdateFunctionCode`)
-  and `portfolio-terraform-ci` (scoped Terraform role).
+- **Bootstrapped manually, NOT in Terraform:** only the state bucket + lock
+  table (they must exist before `terraform init`) and the `portfolio-terraform-ci`
+  role (the role that *runs* Terraform — chicken-and-egg, so kept out-of-band;
+  its policy is maintained via the AWS CLI).
+- **In Terraform** (`modules/api`): the GitHub OIDC provider and the
+  `portfolio-github-actions` role/policy.
 - **Two distinct OIDC roles, by design:**
-  - `portfolio-github-actions` → used by `deploy-frontend`/`deploy-api`.
-    Deploy-only permissions.
-  - `portfolio-terraform-ci` → used by `deploy-infra`. Service-scoped least
-    privilege: full `s3/cloudfront/lambda/apigateway/dynamodb/ses/logs/cloudwatch`,
+  - `portfolio-github-actions` (Terraform-managed) → used by
+    `deploy-frontend`/`deploy-api`. Deploy-only: S3 site write, CloudFront
+    invalidation, `lambda:UpdateFunctionCode`. Trust: `refs/heads/main` only.
+  - `portfolio-terraform-ci` (out-of-band, CLI-managed) → used by
+    `deploy-infra`. Service-scoped least privilege: full
+    `s3/cloudfront/lambda/apigateway/dynamodb/ses/logs/cloudwatch/route53/acm`,
     `iam:*` **restricted to `arn:*:iam::*:role/policy portfolio-*`**, plus global
     IAM read. Trust allows `refs/heads/main` and `pull_request`. Cannot touch
     EC2/RDS/billing/users or IAM outside `portfolio-*`.

@@ -22,4 +22,6 @@ module "cdn" {
   source = "./modules/cdn"
 
   api_gateway_endpoint = module.api.api_endpoint
+  site_domain          = var.site_domain
+  acm_certificate_arn  = aws_acm_certificate_validation.site.certificate_arn
 }

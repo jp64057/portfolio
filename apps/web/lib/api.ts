@@ -40,3 +40,16 @@ export async function sendContact(body: {
 export async function trackResumeDownload(): Promise<void> {
   await fetch(`${BASE}/api/resume-download`, { method: 'POST' }).catch(() => {})
 }
+
+export interface Stats {
+  totalPageViews: number
+  pages: { path: string; views: number }[]
+  resumeDownloads: number
+  generatedAt: string
+}
+
+export async function fetchStats(): Promise<Stats> {
+  const res = await fetch(`${BASE}/api/stats`)
+  if (!res.ok) throw new Error('Failed to fetch stats')
+  return res.json()
+}

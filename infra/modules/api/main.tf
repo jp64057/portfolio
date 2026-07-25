@@ -5,7 +5,7 @@ locals {
   account_id = data.aws_caller_identity.current.account_id
   region     = data.aws_region.current.name
 
-  functions = ["contact", "github-stats", "visitor-counter", "resume-tracker"]
+  functions = ["contact", "github-stats", "visitor-counter", "resume-tracker", "stats"]
 }
 
 # ── SES ────────────────────────────────────────────────────────────────────────
@@ -47,6 +47,8 @@ resource "aws_iam_role_policy" "lambda_app" {
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
         ]
         Resource = "arn:aws:dynamodb:${local.region}:${local.account_id}:table/${var.dynamodb_table}"
       },
@@ -141,6 +143,7 @@ locals {
     "github-stats"    = { method = "GET", path = "/api/github-stats" }
     "visitor-counter" = { method = "POST", path = "/api/visit" }
     "resume-tracker"  = { method = "POST", path = "/api/resume-download" }
+    "stats"           = { method = "GET", path = "/api/stats" }
   }
 }
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Nav } from '@/components/Nav'
+import { Footer } from '@/components/Footer'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
@@ -24,9 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <Nav />
           <main className="min-h-screen">{children}</main>
-          <footer className="border-t border-[hsl(var(--border))] py-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
-            Built with Next.js · Deployed on AWS · Infrastructure as Code with Terraform
-          </footer>
+          <Footer />
         </ThemeProvider>
       </body>
     </html>

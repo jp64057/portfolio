@@ -10,6 +10,18 @@ variable "github_repo" {
   default     = "jp64057/portfolio"
 }
 
+variable "root_domain" {
+  description = "Root domain hosted in Route 53 (registered externally at GoDaddy)"
+  type        = string
+  default     = "prue.info"
+}
+
+variable "site_domain" {
+  description = "Fully-qualified domain the portfolio is served on"
+  type        = string
+  default     = "jacob.prue.info"
+}
+
 variable "ses_from_address" {
   description = "Verified SES sender email address"
   type        = string

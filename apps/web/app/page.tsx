@@ -3,6 +3,7 @@ import { SkillsChart } from '@/components/SkillsChart'
 import { GithubStatsCard } from '@/components/GithubStatsCard'
 import { ContactForm } from '@/components/ContactForm'
 import { ProjectCard } from '@/components/ProjectCard'
+import { Reveal } from '@/components/Reveal'
 
 const PROJECTS = [
   {
@@ -19,29 +20,37 @@ export default function Home() {
     <div className="mx-auto max-w-4xl px-6 py-16 space-y-24">
       <TerminalHero />
 
-      <section id="projects">
-        <h2 className="text-2xl font-bold mb-8">Projects</h2>
-        <div className="grid gap-6 sm:grid-cols-2">
-          {PROJECTS.map((p) => (
-            <ProjectCard key={p.title} {...p} />
-          ))}
-        </div>
-      </section>
+      <Reveal>
+        <section id="projects">
+          <h2 className="text-2xl font-bold mb-8">Projects</h2>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {PROJECTS.map((p) => (
+              <ProjectCard key={p.title} {...p} />
+            ))}
+          </div>
+        </section>
+      </Reveal>
 
-      <section id="skills">
-        <h2 className="text-2xl font-bold mb-8">Skills</h2>
-        <SkillsChart />
-      </section>
+      <Reveal>
+        <section id="skills">
+          <h2 className="text-2xl font-bold mb-8">Skills</h2>
+          <SkillsChart />
+        </section>
+      </Reveal>
 
-      <section id="github">
-        <h2 className="text-2xl font-bold mb-8">GitHub Activity</h2>
-        <GithubStatsCard />
-      </section>
+      <Reveal>
+        <section id="github">
+          <h2 className="text-2xl font-bold mb-8">GitHub Activity</h2>
+          <GithubStatsCard />
+        </section>
+      </Reveal>
 
-      <section id="contact">
-        <h2 className="text-2xl font-bold mb-8">Contact</h2>
-        <ContactForm />
-      </section>
+      <Reveal>
+        <section id="contact">
+          <h2 className="text-2xl font-bold mb-8">Contact</h2>
+          <ContactForm />
+        </section>
+      </Reveal>
     </div>
   )
 }

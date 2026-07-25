@@ -81,6 +81,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
+        {/* If JS is disabled, IntersectionObserver never runs — keep content visible. */}
+        <noscript>
+          <style>{`.reveal{opacity:1 !important;transform:none !important}`}</style>
+        </noscript>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <Nav />
           <main className="min-h-screen">{children}</main>

@@ -96,6 +96,13 @@ resource "aws_lambda_function" "functions" {
     }
   }
 
+  # Function code is deployed by the deploy-api workflow (lambda
+  # update-function-code), not Terraform. Ignore source_code_hash so plans
+  # don't perpetually show phantom in-place updates after each API deploy.
+  lifecycle {
+    ignore_changes = [source_code_hash]
+  }
+
   depends_on = [aws_cloudwatch_log_group.functions]
 }
 

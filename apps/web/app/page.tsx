@@ -21,8 +21,8 @@ export default function Home() {
       <TerminalHero />
 
       <Reveal>
-        <section id="projects">
-          <h2 className="text-2xl font-bold mb-8">Projects</h2>
+        <section id="projects" aria-labelledby="projects-heading">
+          <h2 id="projects-heading" className="text-2xl font-bold mb-8">Projects</h2>
           <div className="grid gap-6 sm:grid-cols-2">
             {PROJECTS.map((p) => (
               <ProjectCard key={p.title} {...p} />
@@ -32,22 +32,22 @@ export default function Home() {
       </Reveal>
 
       <Reveal>
-        <section id="skills">
-          <h2 className="text-2xl font-bold mb-8">Skills</h2>
+        <section id="skills" aria-labelledby="skills-heading">
+          <h2 id="skills-heading" className="text-2xl font-bold mb-8">Skills</h2>
           <SkillsChart />
         </section>
       </Reveal>
 
       <Reveal>
-        <section id="github">
-          <h2 className="text-2xl font-bold mb-8">GitHub Activity</h2>
+        <section id="github" aria-labelledby="github-heading">
+          <h2 id="github-heading" className="text-2xl font-bold mb-8">GitHub Activity</h2>
           <GithubStatsCard />
         </section>
       </Reveal>
 
       <Reveal>
-        <section id="contact">
-          <h2 className="text-2xl font-bold mb-8">Contact</h2>
+        <section id="contact" aria-labelledby="contact-heading">
+          <h2 id="contact-heading" className="text-2xl font-bold mb-8">Contact</h2>
           <ContactForm />
         </section>
       </Reveal>

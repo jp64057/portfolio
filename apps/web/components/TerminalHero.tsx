@@ -19,8 +19,19 @@ export function TerminalHero() {
   const [displayed, setDisplayed] = useState<string[]>([])
   const [lineIndex, setLineIndex] = useState(0)
   const [charIndex, setCharIndex] = useState(0)
+  const [reduced, setReduced] = useState(false)
+
+  // Reduced-motion: skip the typing animation and show the full terminal at once.
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setReduced(true)
+      setDisplayed(LINES)
+      setLineIndex(LINES.length)
+    }
+  }, [])
 
   useEffect(() => {
+    if (reduced) return
     if (lineIndex >= LINES.length) return
 
     const line = LINES[lineIndex]
@@ -42,12 +53,12 @@ export function TerminalHero() {
       }, 220)
       return () => clearTimeout(t)
     }
-  }, [lineIndex, charIndex])
+  }, [lineIndex, charIndex, reduced])
 
   return (
     <section>
       <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))] p-6 font-mono text-sm leading-7">
-        <div className="mb-3 flex gap-1.5">
+        <div className="mb-3 flex gap-1.5" aria-hidden>
           <span className="h-3 w-3 rounded-full bg-red-500" />
           <span className="h-3 w-3 rounded-full bg-yellow-500" />
           <span className="h-3 w-3 rounded-full bg-green-500" />
@@ -75,7 +86,7 @@ export function TerminalHero() {
         <div className="mt-6 flex gap-4">
           <a
             href="#contact"
-            className="rounded-lg bg-[hsl(var(--accent))] px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+            className="rounded-lg bg-[hsl(var(--accent-solid))] px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
           >
             Get in touch
           </a>

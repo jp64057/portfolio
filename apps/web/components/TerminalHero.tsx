@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { ResumeButton } from '@/components/ResumeButton'
 
 const LINES = [
   '$ whoami',
@@ -84,6 +85,7 @@ export function TerminalHero() {
           >
             View projects
           </a>
+          <ResumeButton />
         </div>
       </div>
     </section>

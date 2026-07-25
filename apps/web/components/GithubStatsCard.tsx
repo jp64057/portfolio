@@ -51,7 +51,7 @@ export function GithubStatsCard() {
   }
 
   return (
-    <div className="rounded-xl border border-[hsl(var(--border))] p-6 space-y-6">
+    <div className="fade-in rounded-xl border border-[hsl(var(--border))] p-6 space-y-6">
       <div className="grid grid-cols-3 gap-4 text-center">
         <div className="rounded-lg bg-[hsl(var(--muted))] p-4">
           <p className="text-3xl font-bold text-[hsl(var(--accent))]">

@@ -27,3 +27,8 @@ output "route53_zone_id" {
   description = "Route 53 hosted zone ID for prue.info"
   value       = module.dns.zone_id
 }
+
+output "site_url" {
+  description = "Public URL of the portfolio (custom domain)"
+  value       = "https://${var.site_domain}"
+}

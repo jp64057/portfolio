@@ -30,8 +30,11 @@ Gateway stage, or you run `sam local start-api`. In prod the frontend calls
 
 ## Live deployment (AWS account 816683906576, us-east-1)
 
-- **URL:** https://d1ngproq726rg2.cloudfront.net (CloudFront `E28U32DJIHP4X9`,
-  no custom domain — default cert)
+- **URL:** https://jacob.prue.info (custom domain; CloudFront `E28U32DJIHP4X9`,
+  ACM cert in us-east-1). Also reachable at https://d1ngproq726rg2.cloudfront.net.
+- **DNS:** `prue.info` registered at GoDaddy, delegated to Route 53 (all DNS in
+  Terraform via the `dns` module). Cert validation + `jacob.prue.info` A/AAAA
+  alias records are in `acm.tf` / `dns_records.tf`.
 - **Site bucket:** `jp64057-portfolio-site`
 - **API Gateway v2 (HTTP):** `oba4jwe8k9` (`portfolio`), fronted at `/api/*`
 - **Lambdas (Node 22):** `portfolio-github-stats`, `portfolio-contact`,

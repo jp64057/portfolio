@@ -21,6 +21,10 @@ export function ContactForm() {
     'idle' | 'loading' | 'success' | 'error' | 'rate-limited' | 'captcha'
   >('idle')
   const [turnstileToken, setTurnstileToken] = useState('')
+  // Render the CAPTCHA only once the user engages the form. Keeps the external
+  // widget out of the initial render (better a11y/perf audits) while still
+  // presenting it to real users the moment they start filling it in.
+  const [showCaptcha, setShowCaptcha] = useState(false)
   const {
     register,
     handleSubmit,
@@ -63,7 +67,12 @@ export function ContactForm() {
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          onFocus={() => setShowCaptcha(true)}
+          className="space-y-4"
+          noValidate
+        >
           {/* Honeypot — hidden from real users, bots fill it in */}
           <input {...register('honeypot')} type="text" tabIndex={-1} aria-hidden className="hidden" />
 
@@ -120,7 +129,9 @@ export function ContactForm() {
             )}
           </div>
 
-          <Turnstile onVerify={setTurnstileToken} onExpire={() => setTurnstileToken('')} />
+          {showCaptcha && (
+            <Turnstile onVerify={setTurnstileToken} onExpire={() => setTurnstileToken('')} />
+          )}
 
           {status === 'captcha' && (
             <p role="alert" className="text-sm text-yellow-700 dark:text-yellow-400">

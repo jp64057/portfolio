@@ -76,5 +76,5 @@ export function Turnstile({
     }
   }, [])
 
-  return <div ref={ref} className="min-h-[65px]" aria-label="CAPTCHA challenge" />
+  return <div ref={ref} className="min-h-[65px]" />
 }

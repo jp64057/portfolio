@@ -18,6 +18,8 @@ module "api" {
   github_repo           = var.github_repo
   guestbook_admin_token = var.guestbook_admin_token
   turnstile_secret_key  = var.turnstile_secret_key
+  anthropic_api_key     = var.anthropic_api_key
+  chat_model            = var.chat_model
 }
 
 module "cdn" {

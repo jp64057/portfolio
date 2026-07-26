@@ -86,6 +86,17 @@ export async function signGuestbook(body: {
   })
 }
 
+export interface NowData {
+  latestCommit: { repo: string; message: string; url: string; at: string } | null
+  fetchedAt: string
+}
+
+export async function fetchNow(): Promise<NowData> {
+  const res = await fetch(`${BASE}/api/now`)
+  if (!res.ok) throw new Error('Failed to fetch now')
+  return res.json()
+}
+
 export interface Stats {
   totalPageViews: number
   pages: { path: string; views: number }[]

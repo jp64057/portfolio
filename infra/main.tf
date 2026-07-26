@@ -29,3 +29,14 @@ module "cdn" {
   site_domain          = var.site_domain
   acm_certificate_arn  = aws_acm_certificate_validation.site.certificate_arn
 }
+
+module "observability" {
+  source = "./modules/observability"
+
+  function_names     = module.api.function_names
+  api_id             = module.api.api_id
+  api_name           = module.api.api_name
+  region             = var.aws_region
+  alarm_email        = var.ses_to_address
+  monthly_budget_usd = var.monthly_budget_usd
+}

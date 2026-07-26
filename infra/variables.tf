@@ -65,3 +65,9 @@ variable "chat_model" {
   type        = string
   default     = "claude-opus-4-8"
 }
+
+variable "monthly_budget_usd" {
+  description = "Monthly AWS cost budget in USD for the billing alarm (protects free-tier credits)."
+  type        = number
+  default     = 10
+}

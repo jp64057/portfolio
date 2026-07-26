@@ -1,5 +1,5 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
-import { ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb'
+import { ScanCommand } from '@aws-sdk/lib-dynamodb'
 import { ddb, TABLE } from '../../shared/dynamo.js'
 import { ok, err } from '../../shared/response.js'
 
@@ -9,7 +9,6 @@ const CACHE_TTL_MS = 60_000
 export interface Stats {
   totalPageViews: number
   pages: { path: string; views: number }[]
-  resumeDownloads: number
   generatedAt: string
 }
 
@@ -45,21 +44,9 @@ export async function computeStats(): Promise<Stats> {
 
   pages.sort((a, b) => b.views - a.views)
 
-  // Résumé downloads are one item per event under a shared PK — count them
-  // without pulling the (IP-bearing) items back over the wire.
-  const dl = await ddb.send(
-    new QueryCommand({
-      TableName: TABLE,
-      KeyConditionExpression: 'PK = :pk',
-      ExpressionAttributeValues: { ':pk': 'resume_download' },
-      Select: 'COUNT',
-    })
-  )
-
   return {
     totalPageViews,
     pages,
-    resumeDownloads: dl.Count ?? 0,
     generatedAt: new Date().toISOString(),
   }
 }

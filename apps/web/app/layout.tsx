@@ -5,6 +5,7 @@ import { Nav } from '@/components/Nav'
 import { Footer } from '@/components/Footer'
 import { CommandPalette } from '@/components/CommandPalette'
 import { ChatWidget } from '@/components/ChatWidget'
+import { ResumeViewer } from '@/components/ResumeViewer'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
@@ -101,6 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Footer />
           <CommandPalette />
           <ChatWidget />
+          <ResumeViewer />
         </ThemeProvider>
         <script
           type="application/ld+json"

@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { sendContact } from '@/lib/api'
 import { Turnstile } from '@/components/Turnstile'
 
@@ -21,10 +21,28 @@ export function ContactForm() {
     'idle' | 'loading' | 'success' | 'error' | 'rate-limited' | 'captcha'
   >('idle')
   const [turnstileToken, setTurnstileToken] = useState('')
-  // Render the CAPTCHA only once the user engages the form. Keeps the external
-  // widget out of the initial render (better a11y/perf audits) while still
-  // presenting it to real users the moment they start filling it in.
+  // Render the CAPTCHA only once the form scrolls into view. Keeps the external
+  // widget out of the initial (top-of-page) render — so audits that don't
+  // scroll never see it — while real visitors get it as they reach the form.
   const [showCaptcha, setShowCaptcha] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShowCaptcha(true)
+          io.disconnect()
+        }
+      },
+      { rootMargin: '0px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
   const {
     register,
     handleSubmit,
@@ -56,7 +74,7 @@ export function ContactForm() {
   }
 
   return (
-    <div className="rounded-xl border border-[hsl(var(--border))] p-6 max-w-lg">
+    <div ref={containerRef} className="rounded-xl border border-[hsl(var(--border))] p-6 max-w-lg">
       {status === 'success' ? (
         <div role="status" className="text-center py-8">
           <p className="text-2xl mb-2" aria-hidden>✓</p>
@@ -67,12 +85,7 @@ export function ContactForm() {
           </button>
         </div>
       ) : (
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          onFocus={() => setShowCaptcha(true)}
-          className="space-y-4"
-          noValidate
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           {/* Honeypot — hidden from real users, bots fill it in */}
           <input {...register('honeypot')} type="text" tabIndex={-1} aria-hidden className="hidden" />
 

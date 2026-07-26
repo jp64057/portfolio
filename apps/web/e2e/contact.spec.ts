@@ -11,10 +11,12 @@ test.describe('contact form validation', () => {
 
   test('rejects an invalid email', async ({ page }) => {
     await page.goto('/#contact')
-    await page.getByLabel('Name').fill('Ada Lovelace')
-    await page.getByLabel('Email').fill('not-an-email')
-    await page.getByLabel('Message').fill('This is a sufficiently long message.')
-    await page.getByRole('button', { name: /send message/i }).click()
+    // Scope to the contact section — the guestbook form also has Name/Message.
+    const form = page.locator('#contact')
+    await form.getByLabel('Name').fill('Ada Lovelace')
+    await form.getByLabel('Email').fill('not-an-email')
+    await form.getByLabel('Message').fill('This is a sufficiently long message.')
+    await form.getByRole('button', { name: /send message/i }).click()
     await expect(page.getByText('Invalid email address')).toBeVisible()
   })
 })

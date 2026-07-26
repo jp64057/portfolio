@@ -10,8 +10,11 @@ locals {
   # Per-function timeout/memory overrides (default is 3s / 128MB). The chat
   # function proxies the Claude API — seconds of latency + the bundled SDK — so
   # it needs a longer timeout (kept < API Gateway's 30s cap) and more memory.
+  # `now` makes up to two sequential GitHub API calls (events + commit), which
+  # can exceed the 3s default; give it more headroom + memory (faster CPU/net).
   function_overrides = {
     chat = { timeout = 29, memory_size = 256 }
+    now  = { timeout = 10, memory_size = 256 }
   }
 }
 

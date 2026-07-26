@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { OPEN_RESUME_VIEWER_EVENT } from '@/components/ResumeViewer'
+import { ACCENTS, accentLabel, setAccent, isCrt, setCrt } from '@/lib/accent'
 
 type Command = {
   id: string
@@ -70,10 +71,24 @@ export function CommandPalette() {
       { id: 'resume', group: 'Actions', label: 'View résumé', hint: 'PDF', keywords: 'cv download view open', run: viewResume },
       {
         id: 'theme',
-        group: 'Actions',
+        group: 'Appearance',
         label: currentlyDark ? 'Switch to light theme' : 'Switch to dark theme',
         keywords: 'dark light mode toggle appearance',
         run: () => setTheme(currentlyDark ? 'light' : 'dark'),
+      },
+      ...ACCENTS.map((a) => ({
+        id: `accent-${a}`,
+        group: 'Appearance',
+        label: `Accent: ${accentLabel(a)}`,
+        keywords: `color accent theme ${a}`,
+        run: () => setAccent(a),
+      })),
+      {
+        id: 'crt',
+        group: 'Appearance',
+        label: 'Toggle CRT / scanline mode',
+        keywords: 'retro scanlines glow crt terminal',
+        run: () => setCrt(!isCrt()),
       },
       {
         id: 'github-ext',

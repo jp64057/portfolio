@@ -84,6 +84,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
+        {/* Apply the saved accent/CRT choice before first paint (no flash). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var a=localStorage.getItem('accent');if(a&&a!=='blue')document.documentElement.dataset.accent=a;if(localStorage.getItem('crt')==='on')document.documentElement.dataset.crt='on';}catch(e){}})();",
+          }}
+        />
         {/* If JS is disabled, IntersectionObserver never runs — keep content visible. */}
         <noscript>
           <style>{`.reveal{opacity:1 !important;transform:none !important}`}</style>

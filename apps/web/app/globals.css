@@ -23,6 +23,48 @@
     --accent-solid: 217 91% 48%;
   }
 
+  /* ── Accent themes (orthogonal to light/dark) ──────────────────────────────
+     Set via data-accent on <html>. Each overrides --accent (text/links, must
+     pass AA on the page bg) and --accent-solid (button fills, white text).
+     Light values first, then a .dark override for legibility on the dark bg. */
+  :root[data-accent='emerald'] { --accent: 160 84% 30%; --accent-solid: 160 84% 30%; }
+  .dark[data-accent='emerald'] { --accent: 152 70% 52%; --accent-solid: 160 84% 33%; }
+
+  :root[data-accent='amber'] { --accent: 32 90% 34%; --accent-solid: 32 90% 40%; }
+  .dark[data-accent='amber'] { --accent: 40 92% 58%; --accent-solid: 32 90% 45%; }
+
+  :root[data-accent='fuchsia'] { --accent: 322 82% 42%; --accent-solid: 322 82% 46%; }
+  .dark[data-accent='fuchsia'] { --accent: 320 88% 68%; --accent-solid: 322 82% 50%; }
+
+  :root[data-accent='violet'] { --accent: 262 80% 48%; --accent-solid: 262 80% 52%; }
+  .dark[data-accent='violet'] { --accent: 262 88% 72%; --accent-solid: 262 80% 58%; }
+
+  /* ── CRT / scanline mode (opt-in via data-crt='on') ────────────────────────
+     A fixed scanline overlay + faint accent text-glow. The flicker animation is
+     gated behind prefers-reduced-motion (see the media query below). */
+  :root[data-crt='on'] body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.14) 0,
+      rgba(0, 0, 0, 0.14) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: multiply;
+  }
+  :root[data-crt='on'] {
+    --crt-glow: 0 0 4px hsl(var(--accent) / 0.35);
+  }
+  :root[data-crt='on'] h1,
+  :root[data-crt='on'] .font-mono {
+    text-shadow: var(--crt-glow);
+  }
+
   * {
     border-color: hsl(var(--border));
   }
@@ -68,6 +110,25 @@
   }
   .fade-in {
     animation: fade-in 0.5s ease-out both;
+  }
+}
+
+/* CRT flicker only for users who haven't asked to reduce motion; reduced-motion
+   users still get the static scanline overlay above, just no flicker. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-crt='on'] body::after {
+    animation: crt-flicker 0.18s steps(2) infinite;
+  }
+  @keyframes crt-flicker {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.92;
+    }
+    100% {
+      opacity: 1;
+    }
   }
 }
 

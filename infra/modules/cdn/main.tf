@@ -2,6 +2,70 @@ locals {
   bucket_name = "jp64057-portfolio-site"
   # Strip the https:// prefix and trailing slash from API Gateway URL for use as a CloudFront origin
   api_origin_domain = replace(replace(var.api_gateway_endpoint, "https://", ""), "/", "")
+
+  # Content-Security-Policy. The site is a Next.js static export: Next inlines
+  # hydration/flight <script> blocks and next/font injects an inline <style>,
+  # neither of which can be nonce'd without a server — hence 'unsafe-inline' on
+  # script/style. Everything else (fonts, XHR to /api/*, images) is same-origin.
+  csp = join("; ", [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ])
+}
+
+# ── Security response headers ─────────────────────────────────────────────────
+# Attached to the default (site) behavior below. Turns a securityheaders.com
+# scan green: CSP, HSTS, nosniff, Referrer-Policy, Permissions-Policy, and
+# frame-ancestors/X-Frame-Options against clickjacking.
+
+resource "aws_cloudfront_response_headers_policy" "security" {
+  name    = "portfolio-security-headers"
+  comment = "Security response headers for the portfolio site"
+
+  security_headers_config {
+    content_type_options {
+      override = true
+    }
+
+    frame_options {
+      frame_option = "DENY"
+      override     = true
+    }
+
+    referrer_policy {
+      referrer_policy = "strict-origin-when-cross-origin"
+      override        = true
+    }
+
+    strict_transport_security {
+      access_control_max_age_sec = 63072000 # 2 years
+      include_subdomains         = true
+      preload                    = false
+      override                   = true
+    }
+
+    content_security_policy {
+      content_security_policy = local.csp
+      override                = true
+    }
+  }
+
+  custom_headers_config {
+    items {
+      header   = "Permissions-Policy"
+      value    = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
+      override = true
+    }
+  }
 }
 
 # ── S3 — static site assets ───────────────────────────────────────────────────
@@ -124,11 +188,12 @@ resource "aws_cloudfront_distribution" "site" {
 
   # Behavior 2 (default): /* → S3, with URL rewrite CloudFront Function
   default_cache_behavior {
-    target_origin_id       = "s3"
-    viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD"]
-    cached_methods         = ["GET", "HEAD"]
-    compress               = true
+    target_origin_id           = "s3"
+    viewer_protocol_policy     = "redirect-to-https"
+    allowed_methods            = ["GET", "HEAD"]
+    cached_methods             = ["GET", "HEAD"]
+    compress                   = true
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
 
     forwarded_values {
       query_string = false

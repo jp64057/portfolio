@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Nav } from '@/components/Nav'
 import { Footer } from '@/components/Footer'
+import { CommandPalette } from '@/components/CommandPalette'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
@@ -97,6 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <Footer />
+          <CommandPalette />
         </ThemeProvider>
         <script
           type="application/ld+json"

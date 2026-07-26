@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
+import { OPEN_COMMAND_PALETTE_EVENT } from '@/components/CommandPalette'
 
 export function Nav() {
   const { theme, setTheme } = useTheme()
@@ -28,6 +29,14 @@ export function Nav() {
           >
             GitHub
           </a>
+          <button
+            onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE_EVENT))}
+            aria-label="Open command palette"
+            title="Command palette (⌘K)"
+            className="hidden items-center gap-1 rounded-md border border-[hsl(var(--border))] px-2 py-1 font-mono text-xs text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] transition-colors sm:flex"
+          >
+            <kbd className="font-sans">⌘</kbd>K
+          </button>
           {mounted && (
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

@@ -8,6 +8,12 @@ apps/web/out/
 apps/web/next-env.d.ts
 *.tsbuildinfo
 
+# Playwright
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/blob-report/
+apps/web/.playwright/
+
 # Lambda build output
 api/dist/
 

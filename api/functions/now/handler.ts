@@ -26,22 +26,41 @@ export async function computeNow(): Promise<NowData> {
   )
   if (!res.ok) throw new Error(`GitHub events API ${res.status}`)
 
+  // The events feed's PushEvent payload carries `head` (the SHA) and `ref`, but
+  // often NOT a `commits` array — so we take the head SHA and, when the message
+  // isn't inlined, fetch the commit to get its message.
   const events = (await res.json()) as Array<{
     type: string
     created_at: string
     repo: { name: string }
-    payload: { commits?: { message: string; sha: string }[] }
+    payload: { head?: string; ref?: string; commits?: { message: string; sha: string }[] }
   }>
 
-  const push = events.find((e) => e.type === 'PushEvent' && (e.payload.commits?.length ?? 0) > 0)
+  const push = events.find((e) => e.type === 'PushEvent' && (e.payload.head || e.payload.commits?.length))
   let latestCommit: NowData['latestCommit'] = null
   if (push) {
-    const commit = push.payload.commits![push.payload.commits!.length - 1]
-    const repoShort = push.repo.name.replace(`${GITHUB_USERNAME}/`, '')
+    const inlined = push.payload.commits?.[push.payload.commits.length - 1]
+    const sha = inlined?.sha ?? push.payload.head ?? ''
+    const repoFull = push.repo.name
+
+    let message = inlined?.message ?? ''
+    if (!message && sha) {
+      // Fetch the commit for its message (repo is public; cached upstream anyway).
+      try {
+        const cRes = await fetch(`https://api.github.com/repos/${repoFull}/commits/${sha}`, { headers })
+        if (cRes.ok) {
+          const c = (await cRes.json()) as { commit?: { message?: string } }
+          message = c.commit?.message ?? ''
+        }
+      } catch {
+        /* leave message empty — we still show the repo + link */
+      }
+    }
+
     latestCommit = {
-      repo: repoShort,
-      message: commit.message.split('\n')[0].slice(0, 100),
-      url: `https://github.com/${push.repo.name}/commit/${commit.sha}`,
+      repo: repoFull.replace(`${GITHUB_USERNAME}/`, ''),
+      message: (message.split('\n')[0] || 'pushed changes').slice(0, 100),
+      url: sha ? `https://github.com/${repoFull}/commit/${sha}` : `https://github.com/${repoFull}`,
       at: push.created_at,
     }
   }

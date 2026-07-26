@@ -3,6 +3,7 @@ import { SkillsChart } from '@/components/SkillsChart'
 import { GithubStatsCard } from '@/components/GithubStatsCard'
 import { ContactForm } from '@/components/ContactForm'
 import { ProjectCard } from '@/components/ProjectCard'
+import { Guestbook } from '@/components/Guestbook'
 import { Reveal } from '@/components/Reveal'
 
 const PROJECTS = [
@@ -42,6 +43,16 @@ export default function Home() {
         <section id="github" aria-labelledby="github-heading">
           <h2 id="github-heading" className="text-2xl font-bold mb-8">GitHub Activity</h2>
           <GithubStatsCard />
+        </section>
+      </Reveal>
+
+      <Reveal>
+        <section id="guestbook" aria-labelledby="guestbook-heading">
+          <h2 id="guestbook-heading" className="text-2xl font-bold mb-2">Guestbook</h2>
+          <p className="mb-8 text-[hsl(var(--muted-foreground))]">
+            Leave a note — say hi, drop feedback, or just prove you were here.
+          </p>
+          <Guestbook />
         </section>
       </Reveal>
 

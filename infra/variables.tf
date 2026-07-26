@@ -38,3 +38,10 @@ variable "github_pat" {
   sensitive   = true
   default     = ""
 }
+
+variable "guestbook_admin_token" {
+  description = "Optional shared secret enabling DELETE /api/guestbook. Empty disables deletion."
+  type        = string
+  sensitive   = true
+  default     = ""
+}

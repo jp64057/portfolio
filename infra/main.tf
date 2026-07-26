@@ -11,11 +11,12 @@ module "data" {
 module "api" {
   source = "./modules/api"
 
-  dynamodb_table   = module.data.table_name
-  ses_from_address = var.ses_from_address
-  ses_to_address   = var.ses_to_address
-  github_pat       = var.github_pat
-  github_repo      = var.github_repo
+  dynamodb_table        = module.data.table_name
+  ses_from_address      = var.ses_from_address
+  ses_to_address        = var.ses_to_address
+  github_pat            = var.github_pat
+  github_repo           = var.github_repo
+  guestbook_admin_token = var.guestbook_admin_token
 }
 
 module "cdn" {

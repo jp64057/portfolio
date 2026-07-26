@@ -5,7 +5,7 @@ locals {
   account_id = data.aws_caller_identity.current.account_id
   region     = data.aws_region.current.name
 
-  functions = ["contact", "github-stats", "visitor-counter", "resume-tracker", "stats"]
+  functions = ["contact", "github-stats", "visitor-counter", "resume-tracker", "stats", "guestbook"]
 }
 
 # ── SES ────────────────────────────────────────────────────────────────────────
@@ -95,6 +95,10 @@ resource "aws_lambda_function" "functions" {
       SES_TO_ADDRESS   = var.ses_to_address
       GITHUB_PAT       = var.github_pat
       ALLOWED_ORIGIN   = "*"
+      # Guestbook: flip to "false" to require manual approval before entries show.
+      GUESTBOOK_AUTO_APPROVE = "true"
+      # Empty = admin delete disabled. Set a token to enable DELETE /api/guestbook.
+      GUESTBOOK_ADMIN_TOKEN = var.guestbook_admin_token
     }
   }
 
@@ -138,12 +142,17 @@ resource "aws_apigatewayv2_integration" "functions" {
 }
 
 locals {
+  # Keyed by route (not function), so one function can back several methods on
+  # the same path — the guestbook serves GET/POST/DELETE on /api/guestbook.
   routes = {
-    "contact"         = { method = "POST", path = "/api/contact" }
-    "github-stats"    = { method = "GET", path = "/api/github-stats" }
-    "visitor-counter" = { method = "POST", path = "/api/visit" }
-    "resume-tracker"  = { method = "POST", path = "/api/resume-download" }
-    "stats"           = { method = "GET", path = "/api/stats" }
+    "contact"          = { func = "contact", method = "POST", path = "/api/contact" }
+    "github-stats"     = { func = "github-stats", method = "GET", path = "/api/github-stats" }
+    "visitor-counter"  = { func = "visitor-counter", method = "POST", path = "/api/visit" }
+    "resume-tracker"   = { func = "resume-tracker", method = "POST", path = "/api/resume-download" }
+    "stats"            = { func = "stats", method = "GET", path = "/api/stats" }
+    "guestbook-list"   = { func = "guestbook", method = "GET", path = "/api/guestbook" }
+    "guestbook-sign"   = { func = "guestbook", method = "POST", path = "/api/guestbook" }
+    "guestbook-delete" = { func = "guestbook", method = "DELETE", path = "/api/guestbook" }
   }
 }
 
@@ -152,7 +161,7 @@ resource "aws_apigatewayv2_route" "routes" {
 
   api_id    = aws_apigatewayv2_api.portfolio.id
   route_key = "${each.value.method} ${each.value.path}"
-  target    = "integrations/${aws_apigatewayv2_integration.functions[each.key].id}"
+  target    = "integrations/${aws_apigatewayv2_integration.functions[each.value.func].id}"
 }
 
 resource "aws_lambda_permission" "apigw" {

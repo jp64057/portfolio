@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { ResumeButton } from '@/components/ResumeButton'
 import { OPEN_RESUME_VIEWER_EVENT } from '@/components/ResumeViewer'
 
@@ -11,25 +12,12 @@ const BOOT: { prompt: boolean; text: string }[] = [
   { prompt: false, text: 'Jacob Prue — Full-Stack & Cloud Engineer' },
   { prompt: true, text: 'cat welcome.txt' },
   { prompt: false, text: 'Welcome — this terminal is interactive.' },
-  { prompt: false, text: "Type a command, or `help` to see what's available." },
+  { prompt: false, text: "Type a command, `help` for the list, or ⇥ to autocomplete." },
 ]
 
 const PROMPT = 'visitor@jacob.prue.info:~$'
 
 type Entry = { command: string; output: string[] }
-
-const HELP: string[] = [
-  'Available commands:',
-  '  help       show this message',
-  '  about      a short bio',
-  '  projects   jump to the projects section',
-  '  skills     jump to the skills section',
-  '  github     jump to GitHub activity',
-  '  contact    jump to the contact section',
-  '  resume     view my résumé (PDF, opens in-page)',
-  '  stats      open the site stats page',
-  '  clear      clear the terminal',
-]
 
 const ABOUT: string[] = [
   'Jacob Prue — Full-Stack & Cloud Engineer',
@@ -37,11 +25,51 @@ const ABOUT: string[] = [
   'with a focus on infrastructure as code, type safety, and reliable software.',
 ]
 
+const NEOFETCH: string[] = [
+  '        ▄▄▄▄▄        visitor@jacob.prue.info',
+  '     ▄█████████▄     ----------------------',
+  '    ███▀     ▀███    OS:     PortfolioOS (Next.js 15)',
+  '    ███  ▄▄▄  ███    Host:   S3 + CloudFront',
+  '    ███  ▀▀▀  ███    Shell:  jsh 1.0',
+  '    ███▄     ▄███    Cloud:  AWS Lambda · DynamoDB',
+  '     ▀█████████▀     IaC:    Terraform',
+  '        ▀▀▀▀▀        Uptime: since you arrived',
+]
+
+const COFFEE: string[] = [
+  '      ( (',
+  '       ) )',
+  '    ........',
+  '    |      |]   brewing…',
+  '    \\      /',
+  "     `----'    ☕ enjoy.",
+]
+
 // Command hints surfaced as tappable chips for non-keyboard / mobile users.
 const HINTS = ['help', 'about', 'projects', 'skills', 'contact', 'resume']
 
+type CommandResult = string[] | 'clear' | void
+type Command = {
+  name: string
+  desc?: string // shown in `help`; omit to hide from help + completion
+  run: (args: string[]) => CommandResult
+}
+
+// Build the `help` listing from the visible (described) commands.
+function buildHelp(commands: Command[]): string[] {
+  const visible = commands.filter((c) => c.desc)
+  const pad = Math.max(...visible.map((c) => c.name.length))
+  return [
+    'Available commands:',
+    ...visible.map((c) => `  ${c.name.padEnd(pad + 2)}${c.desc}`),
+    '',
+    'Tips: ↑/↓ history · ⇥ autocomplete · try `neofetch`, `coffee`, `sudo`…',
+  ]
+}
+
 export function TerminalHero() {
   const router = useRouter()
+  const { setTheme, resolvedTheme, theme } = useTheme()
   const [reduced, setReduced] = useState(false)
   const [displayedBoot, setDisplayedBoot] = useState<string[]>([])
   const [bootLine, setBootLine] = useState(0)
@@ -55,6 +83,9 @@ export function TerminalHero() {
 
   const inputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  // Points at the current command list so the `help` command can render itself
+  // without the registry having to reference its own (not-yet-assigned) const.
+  const commandsRef = useRef<Command[]>([])
 
   // Reduced-motion: skip the typing animation and boot straight into interactive mode.
   useEffect(() => {
@@ -110,6 +141,68 @@ export function TerminalHero() {
     window.dispatchEvent(new Event(OPEN_RESUME_VIEWER_EVENT))
   }, [])
 
+  // The command registry: single source of truth for dispatch, `help`, and
+  // tab-completion. Commands with a `desc` are listed by `help` and completable.
+  const commands = useMemo<Command[]>(() => {
+    const jump = (id: string, label: string): Command => ({
+      name: id,
+      desc: `jump to the ${label} section`,
+      run: () => {
+        scrollToSection(id)
+        return [`→ scrolling to ${label}…`]
+      },
+    })
+    return [
+      { name: 'help', desc: 'show this message', run: () => buildHelp(commandsRef.current) },
+      { name: 'about', desc: 'a short bio', run: () => ABOUT },
+      jump('projects', 'projects'),
+      jump('skills', 'skills'),
+      jump('github', 'GitHub activity'),
+      jump('contact', 'contact'),
+      {
+        name: 'resume',
+        desc: 'view my résumé (PDF, opens in-page)',
+        run: () => {
+          viewResume()
+          return ['▸ opening résumé viewer…']
+        },
+      },
+      {
+        name: 'stats',
+        desc: 'open the site stats page',
+        run: () => {
+          router.push('/stats')
+          return ['→ opening the stats page…']
+        },
+      },
+      {
+        name: 'theme',
+        desc: 'toggle light / dark mode',
+        run: () => {
+          const dark = (resolvedTheme ?? theme) === 'dark'
+          setTheme(dark ? 'light' : 'dark')
+          return [`◑ switched to ${dark ? 'light' : 'dark'} theme`]
+        },
+      },
+      { name: 'date', desc: 'print the current date & time', run: () => [new Date().toString()] },
+      { name: 'echo', desc: 'echo <text> — print text back', run: (args) => [args.join(' ')] },
+      { name: 'clear', desc: 'clear the terminal', run: () => 'clear' as const },
+      // --- aliases & easter eggs (hidden: no desc) ---
+      { name: 'whoami', run: () => ABOUT },
+      { name: 'cv', run: () => (viewResume(), ['▸ opening résumé viewer…']) },
+      { name: 'ls', run: () => ['projects/  skills/  github/  contact/  resume.pdf'] },
+      { name: 'pwd', run: () => ['/home/visitor'] },
+      { name: 'history', run: () => (history.length ? history.map((h, i) => `${i + 1}  ${h}`) : ['(no history yet)']) },
+      { name: 'neofetch', run: () => NEOFETCH },
+      { name: 'coffee', run: () => COFFEE },
+      { name: 'sudo', run: (args) => [`visitor is not in the sudoers file. This incident will ${args.length ? 'not ' : ''}be reported.`] },
+      { name: 'sl', run: () => ['🚂💨  woo woo! (you probably meant `ls`)'] },
+      { name: 'matrix', run: () => ['Wake up, Neo…', 'The Matrix has you. Follow the white rabbit. 🐇'] },
+      { name: 'exit', run: () => ['Nice try — there is no escape. You live here now. 🙂'] },
+    ]
+  }, [scrollToSection, viewResume, router, setTheme, resolvedTheme, theme, history])
+  commandsRef.current = commands
+
   const runCommand = useCallback(
     (raw: string) => {
       const command = raw.trim()
@@ -120,62 +213,56 @@ export function TerminalHero() {
       setHistory((prev) => [...prev, command])
       setHistoryIndex(-1)
 
-      const name = command.split(/\s+/)[0].toLowerCase()
-      let output: string[] = []
+      const [name, ...args] = command.split(/\s+/)
+      const cmd = commands.find((c) => c.name === name.toLowerCase())
 
-      switch (name) {
-        case 'help':
-        case '?':
-          output = HELP
-          break
-        case 'about':
-        case 'whoami':
-          output = ABOUT
-          break
-        case 'projects':
-          output = ['→ scrolling to projects…']
-          scrollToSection('projects')
-          break
-        case 'skills':
-          output = ['→ scrolling to skills…']
-          scrollToSection('skills')
-          break
-        case 'github':
-          output = ['→ scrolling to GitHub activity…']
-          scrollToSection('github')
-          break
-        case 'contact':
-          output = ['→ scrolling to contact…']
-          scrollToSection('contact')
-          break
-        case 'resume':
-        case 'cv':
-          output = ['▸ opening résumé viewer…']
-          viewResume()
-          break
-        case 'stats':
-          output = ['→ opening the stats page…']
-          router.push('/stats')
-          break
-        case 'ls':
-          output = ['projects/  skills/  github/  contact/  resume.pdf']
-          break
-        case 'clear':
-          setEntries([])
-          return
-        default:
-          output = [`command not found: ${name}`, "Type `help` for a list of commands."]
+      if (!cmd) {
+        setEntries((prev) => [
+          ...prev,
+          { command, output: [`command not found: ${name}`, 'Type `help` for a list of commands.'] },
+        ])
+        return
       }
-      setEntries((prev) => [...prev, { command, output }])
+
+      const result = cmd.run(args)
+      if (result === 'clear') {
+        setEntries([])
+        return
+      }
+      setEntries((prev) => [...prev, { command, output: result ?? [] }])
     },
-    [scrollToSection, viewResume, router],
+    [commands],
   )
+
+  // Tab-completion: complete to the common prefix of matching command names;
+  // if several still match, list them.
+  const complete = useCallback(() => {
+    const token = input.trim()
+    if (!token || /\s/.test(input)) return // only complete the command word
+    const names = commands.filter((c) => c.desc).map((c) => c.name)
+    const matches = names.filter((n) => n.startsWith(token.toLowerCase()))
+    if (matches.length === 0) return
+    if (matches.length === 1) {
+      setInput(matches[0] + ' ')
+      return
+    }
+    // Longest common prefix of the matches.
+    let prefix = matches[0]
+    for (const m of matches) {
+      while (!m.startsWith(prefix)) prefix = prefix.slice(0, -1)
+    }
+    if (prefix.length > token.length) setInput(prefix)
+    else setEntries((prev) => [...prev, { command: token, output: [matches.join('   ')] }])
+  }, [input, commands])
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
       runCommand(input)
       setInput('')
+    } else if (e.key === 'Tab') {
+      e.preventDefault()
+      complete()
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       if (history.length === 0) return

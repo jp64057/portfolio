@@ -45,6 +45,10 @@ jobs:
           # The frontend calls /api/* which CloudFront routes to API Gateway,
           # so no absolute URL is needed in production. Set this for local dev.
           NEXT_PUBLIC_API_URL: ''
+          # Cloudflare Turnstile site key, baked into the static bundle at build.
+          # Empty (variable unset) → the component falls back to CF's public test
+          # site key. Public value, so a repo *variable*, not a secret.
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4

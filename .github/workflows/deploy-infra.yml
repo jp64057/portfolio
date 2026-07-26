@@ -35,6 +35,10 @@ jobs:
       # Empty (secret unset) leaves the bot in graceful-fallback mode. Sensitive,
       # so Terraform redacts it from plan output.
       TF_VAR_anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Feeds var.turnstile_secret_key → the contact Lambda's TURNSTILE_SECRET_KEY.
+      # Sensitive, so Terraform redacts it. Set the GH secret before relying on
+      # this — an unset secret resolves to "" and overrides the tfvar default.
+      TF_VAR_turnstile_secret_key: ${{ secrets.TURNSTILE_SECRET_KEY }}
     defaults:
       run:
         working-directory: infra
@@ -115,6 +119,8 @@ jobs:
     env:
       # Feeds var.anthropic_api_key → the chatbot Lambda's ANTHROPIC_API_KEY.
       TF_VAR_anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Feeds var.turnstile_secret_key → the contact Lambda's TURNSTILE_SECRET_KEY.
+      TF_VAR_turnstile_secret_key: ${{ secrets.TURNSTILE_SECRET_KEY }}
     defaults:
       run:
         working-directory: infra

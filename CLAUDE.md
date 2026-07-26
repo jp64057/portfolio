@@ -22,7 +22,16 @@ pnpm --filter web build      # static export → apps/web/out
 pnpm --filter api build      # bundle Lambdas → api/dist/*/handler.js
 pnpm lint                    # web (next lint + tsc) + api
 pnpm test                    # api tests (vitest)
+pnpm --filter web test:unit  # web unit tests (vitest, lib/**/*.test.ts)
+pnpm --filter web build && pnpm --filter web test:e2e  # Playwright E2E vs the static export
 ```
+
+E2E tests live in `apps/web/e2e/*.spec.ts` and run against the real static
+export (`out/`) served by `apps/web/tests/static-server.mjs`. They need the
+Playwright browser once: `pnpm --filter web exec playwright install chromium`
+(add `--with-deps` in CI / on a fresh Linux box). The `Web Tests` workflow
+(`.github/workflows/test-web.yml`) runs unit + E2E on every PR touching
+`apps/web/**`.
 
 Local API calls fail unless `NEXT_PUBLIC_API_URL` points at a running API
 Gateway stage, or you run `sam local start-api`. In prod the frontend calls

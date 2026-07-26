@@ -58,10 +58,30 @@ jobs:
 
       - name: Deploy Lambda functions
         run: |
+          # Deploy code to each bundled function. A function that doesn't exist
+          # yet (a newly added Lambda not applied by deploy-infra) surfaces as a
+          # ResourceNotFoundException — tolerate it with a warning instead of
+          # failing the whole run, so the create-then-deploy ordering isn't a
+          # red build. Any other error still fails the job.
+          # (Uses only lambda:UpdateFunctionCode — the deploy role has no
+          # GetFunction, so we can't pre-check existence; we react to the error.)
+          skipped=()
           for fn in api/dist/*/; do
             name=$(basename "$fn")
-            aws lambda update-function-code \
-              --function-name "portfolio-${name}" \
-              --zip-file "fileb://${fn}handler.zip"
-            echo "Deployed portfolio-${name}"
+            fname="portfolio-${name}"
+            if out=$(aws lambda update-function-code \
+                       --function-name "$fname" \
+                       --zip-file "fileb://${fn}handler.zip" 2>&1); then
+              echo "Deployed $fname"
+            elif grep -q 'ResourceNotFoundException' <<<"$out"; then
+              echo "::warning::$fname does not exist yet — skipping code deploy. Create it via the deploy-infra 'apply' workflow, then re-run this job."
+              skipped+=("$fname")
+            else
+              echo "$out" >&2
+              echo "::error::Failed to deploy $fname"
+              exit 1
+            fi
           done
+          if [ ${#skipped[@]} -gt 0 ]; then
+            echo "Note: skipped ${#skipped[@]} not-yet-created function(s): ${skipped[*]}"
+          fi

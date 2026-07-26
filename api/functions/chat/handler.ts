@@ -4,9 +4,9 @@ import { GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb'
 import { ddb, TABLE } from '../../shared/dynamo.js'
 import { ok, err } from '../../shared/response.js'
 
-// Model is env-configurable. Defaults to Opus 4.8; set CHAT_MODEL to
-// claude-haiku-4-5 for a cheaper/faster résumé bot.
-const MODEL = process.env.CHAT_MODEL ?? 'claude-opus-4-8'
+// Model is env-configurable. Defaults to Haiku 4.5 (cheapest/fastest); set
+// CHAT_MODEL to claude-opus-4-8 for a more capable (pricier) résumé bot.
+const MODEL = process.env.CHAT_MODEL ?? 'claude-haiku-4-5'
 const MAX_TOKENS = 512
 const RATE_WINDOW_SEC = 3600
 const RATE_MAX = 10 // messages per IP per hour

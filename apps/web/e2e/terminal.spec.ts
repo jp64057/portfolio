@@ -26,4 +26,28 @@ test.describe('interactive terminal', () => {
     // the job title, which would otherwise match twice).
     await expect(page.getByText(/scalable, cloud-native systems/)).toBeVisible()
   })
+
+  test('Tab autocompletes a command name', async ({ page }) => {
+    await page.goto('/')
+    const input = page.getByLabel('Terminal command input')
+    await input.fill('ab')
+    await input.press('Tab')
+    await expect(input).toHaveValue('about ')
+  })
+
+  test('`echo` prints its arguments back', async ({ page }) => {
+    await page.goto('/')
+    const input = page.getByLabel('Terminal command input')
+    await input.fill('echo hello world')
+    await input.press('Enter')
+    await expect(page.getByText('hello world', { exact: true })).toBeVisible()
+  })
+
+  test('`sudo` returns the classic easter-egg message', async ({ page }) => {
+    await page.goto('/')
+    const input = page.getByLabel('Terminal command input')
+    await input.fill('sudo rm -rf /')
+    await input.press('Enter')
+    await expect(page.getByText(/sudoers file/)).toBeVisible()
+  })
 })

@@ -3,8 +3,9 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { sendContact } from '@/lib/api'
+import { Turnstile } from '@/components/Turnstile'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -16,7 +17,32 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export function ContactForm() {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'rate-limited'>('idle')
+  const [status, setStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error' | 'rate-limited' | 'captcha'
+  >('idle')
+  const [turnstileToken, setTurnstileToken] = useState('')
+  // Render the CAPTCHA only once the form scrolls into view. Keeps the external
+  // widget out of the initial (top-of-page) render — so audits that don't
+  // scroll never see it — while real visitors get it as they reach the form.
+  const [showCaptcha, setShowCaptcha] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShowCaptcha(true)
+          io.disconnect()
+        }
+      },
+      { rootMargin: '0px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
   const {
     register,
     handleSubmit,
@@ -25,11 +51,17 @@ export function ContactForm() {
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   const onSubmit = async (data: FormData) => {
+    if (!turnstileToken) {
+      setStatus('captcha')
+      return
+    }
     setStatus('loading')
     try {
-      const res = await sendContact(data)
+      const res = await sendContact({ ...data, turnstileToken })
       if (res.status === 429) {
         setStatus('rate-limited')
+      } else if (res.status === 403) {
+        setStatus('captcha')
       } else if (res.ok) {
         setStatus('success')
         reset()
@@ -42,7 +74,7 @@ export function ContactForm() {
   }
 
   return (
-    <div className="rounded-xl border border-[hsl(var(--border))] p-6 max-w-lg">
+    <div ref={containerRef} className="rounded-xl border border-[hsl(var(--border))] p-6 max-w-lg">
       {status === 'success' ? (
         <div role="status" className="text-center py-8">
           <p className="text-2xl mb-2" aria-hidden>✓</p>
@@ -110,6 +142,15 @@ export function ContactForm() {
             )}
           </div>
 
+          {showCaptcha && (
+            <Turnstile onVerify={setTurnstileToken} onExpire={() => setTurnstileToken('')} />
+          )}
+
+          {status === 'captcha' && (
+            <p role="alert" className="text-sm text-yellow-700 dark:text-yellow-400">
+              Please complete the CAPTCHA before sending.
+            </p>
+          )}
           {status === 'rate-limited' && (
             <p role="alert" className="text-sm text-yellow-700 dark:text-yellow-400">
               Too many requests — try again in an hour.

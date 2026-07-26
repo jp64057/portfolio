@@ -6,6 +6,13 @@ import { ProjectCard } from '@/components/ProjectCard'
 import { Guestbook } from '@/components/Guestbook'
 import { Reveal } from '@/components/Reveal'
 
+// The guestbook is opt-in. Set NEXT_PUBLIC_ENABLE_GUESTBOOK=true at build to
+// render the section; otherwise it is not rendered (its data fetch never runs).
+// Setting the flag to an explicit `false` at build also lets Next tree-shake
+// the Guestbook component out of the bundle. The component, lib helpers, and
+// the portfolio-guestbook Lambda are left intact for easy re-enable.
+const GUESTBOOK_ENABLED = process.env.NEXT_PUBLIC_ENABLE_GUESTBOOK === 'true'
+
 const PROJECTS = [
   {
     title: 'This Portfolio',
@@ -46,15 +53,17 @@ export default function Home() {
         </section>
       </Reveal>
 
-      <Reveal>
-        <section id="guestbook" aria-labelledby="guestbook-heading">
-          <h2 id="guestbook-heading" className="text-2xl font-bold mb-2">Guestbook</h2>
-          <p className="mb-8 text-[hsl(var(--muted-foreground))]">
-            Leave a note — say hi, drop feedback, or just prove you were here.
-          </p>
-          <Guestbook />
-        </section>
-      </Reveal>
+      {GUESTBOOK_ENABLED && (
+        <Reveal>
+          <section id="guestbook" aria-labelledby="guestbook-heading">
+            <h2 id="guestbook-heading" className="text-2xl font-bold mb-2">Guestbook</h2>
+            <p className="mb-8 text-[hsl(var(--muted-foreground))]">
+              Leave a note — say hi, drop feedback, or just prove you were here.
+            </p>
+            <Guestbook />
+          </section>
+        </Reveal>
+      )}
 
       <Reveal>
         <section id="contact" aria-labelledby="contact-heading">

@@ -71,3 +71,9 @@ variable "monthly_budget_usd" {
   type        = number
   default     = 10
 }
+
+variable "enable_observability" {
+  description = "Deploy the observability module (CloudWatch dashboard/alarms + SNS + AWS Budgets). Requires the terraform-ci role to have sns:* + budgets:* — see #54. Off by default so other infra applies aren't blocked."
+  type        = bool
+  default     = false
+}

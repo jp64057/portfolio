@@ -30,6 +30,11 @@ jobs:
     name: Terraform Plan
     if: github.event_name != 'workflow_dispatch' || inputs.action == 'plan'
     runs-on: ubuntu-latest
+    env:
+      # Feeds var.anthropic_api_key → the chatbot Lambda's ANTHROPIC_API_KEY.
+      # Empty (secret unset) leaves the bot in graceful-fallback mode. Sensitive,
+      # so Terraform redacts it from plan output.
+      TF_VAR_anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
     defaults:
       run:
         working-directory: infra
@@ -107,6 +112,9 @@ jobs:
     name: Terraform Apply (manual)
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'apply' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      # Feeds var.anthropic_api_key → the chatbot Lambda's ANTHROPIC_API_KEY.
+      TF_VAR_anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
     defaults:
       run:
         working-directory: infra

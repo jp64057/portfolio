@@ -5,7 +5,7 @@ locals {
   account_id = data.aws_caller_identity.current.account_id
   region     = data.aws_region.current.name
 
-  functions = ["contact", "github-stats", "visitor-counter", "stats", "guestbook", "chat"]
+  functions = ["contact", "github-stats", "visitor-counter", "stats", "guestbook", "chat", "now"]
 
   # Per-function timeout/memory overrides (default is 3s / 128MB). The chat
   # function proxies the Claude API — seconds of latency + the bundled SDK — so
@@ -164,6 +164,7 @@ locals {
     "contact"          = { func = "contact", method = "POST", path = "/api/contact" }
     "github-stats"     = { func = "github-stats", method = "GET", path = "/api/github-stats" }
     "visitor-counter"  = { func = "visitor-counter", method = "POST", path = "/api/visit" }
+    "now"              = { func = "now", method = "GET", path = "/api/now" }
     "stats"            = { func = "stats", method = "GET", path = "/api/stats" }
     "guestbook-list"   = { func = "guestbook", method = "GET", path = "/api/guestbook" }
     "guestbook-sign"   = { func = "guestbook", method = "POST", path = "/api/guestbook" }

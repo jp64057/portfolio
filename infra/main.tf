@@ -31,6 +31,10 @@ module "cdn" {
 }
 
 module "observability" {
+  # Gated off by default — its SNS + AWS Budgets resources need perms the
+  # terraform-ci role doesn't yet have (see #54). Flip enable_observability to
+  # true once that role is expanded.
+  count  = var.enable_observability ? 1 : 0
   source = "./modules/observability"
 
   function_names     = module.api.function_names

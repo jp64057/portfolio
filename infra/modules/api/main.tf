@@ -6,6 +6,13 @@ locals {
   region     = data.aws_region.current.name
 
   functions = ["contact", "github-stats", "visitor-counter", "resume-tracker", "stats", "guestbook", "chat"]
+
+  # Per-function timeout/memory overrides (default is 3s / 128MB). The chat
+  # function proxies the Claude API — seconds of latency + the bundled SDK — so
+  # it needs a longer timeout (kept < API Gateway's 30s cap) and more memory.
+  function_overrides = {
+    chat = { timeout = 29, memory_size = 256 }
+  }
 }
 
 # ── SES ────────────────────────────────────────────────────────────────────────
@@ -80,6 +87,8 @@ resource "aws_lambda_function" "functions" {
   architectures = ["arm64"]
   runtime       = "nodejs22.x"
   handler       = "handler.handler"
+  timeout       = try(local.function_overrides[each.key].timeout, 3)
+  memory_size   = try(local.function_overrides[each.key].memory_size, 128)
   filename      = "${path.root}/../api/dist/${each.key}/handler.zip"
 
   # Placeholder — the CI/CD pipeline updates the code on every deploy.

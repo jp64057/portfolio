@@ -45,6 +45,6 @@ variable "anthropic_api_key" {
 
 variable "chat_model" {
   type        = string
-  default     = "claude-opus-4-8"
-  description = "Claude model ID for the résumé chatbot (e.g. claude-haiku-4-5 for lower cost)."
+  default     = "claude-haiku-4-5"
+  description = "Claude model ID for the résumé chatbot (claude-haiku-4-5 for low cost; claude-opus-4-8 for a more capable, pricier bot)."
 }

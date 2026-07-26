@@ -42,6 +42,28 @@ export async function trackResumeDownload(): Promise<void> {
   await fetch(`${BASE}/api/resume-download`, { method: 'POST' }).catch(() => {})
 }
 
+export interface ChatTurn {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export async function sendChat(
+  messages: ChatTurn[],
+): Promise<{ reply: string; fallback?: boolean }> {
+  const res = await fetch(`${BASE}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages }),
+  })
+  if (res.status === 429) {
+    return { reply: "You're sending messages too quickly — please slow down.", fallback: true }
+  }
+  if (!res.ok) {
+    return { reply: 'Sorry, something went wrong. Please try again in a moment.', fallback: true }
+  }
+  return res.json()
+}
+
 export interface GuestbookEntry {
   id: string
   name: string

@@ -5,7 +5,7 @@ locals {
   account_id = data.aws_caller_identity.current.account_id
   region     = data.aws_region.current.name
 
-  functions = ["contact", "github-stats", "visitor-counter", "resume-tracker", "stats", "guestbook"]
+  functions = ["contact", "github-stats", "visitor-counter", "resume-tracker", "stats", "guestbook", "chat"]
 }
 
 # ── SES ────────────────────────────────────────────────────────────────────────
@@ -102,6 +102,10 @@ resource "aws_lambda_function" "functions" {
       # Cloudflare Turnstile secret for the contact form (defaults to CF's
       # always-pass test secret; set a real one for actual spam protection).
       TURNSTILE_SECRET_KEY = var.turnstile_secret_key
+      # Claude API key for the "Ask my résumé" chatbot. Empty ⇒ the chat
+      # endpoint returns a graceful "not configured" fallback.
+      ANTHROPIC_API_KEY = var.anthropic_api_key
+      CHAT_MODEL        = var.chat_model
     }
   }
 
@@ -156,6 +160,7 @@ locals {
     "guestbook-list"   = { func = "guestbook", method = "GET", path = "/api/guestbook" }
     "guestbook-sign"   = { func = "guestbook", method = "POST", path = "/api/guestbook" }
     "guestbook-delete" = { func = "guestbook", method = "DELETE", path = "/api/guestbook" }
+    "chat"             = { func = "chat", method = "POST", path = "/api/chat" }
   }
 }
 

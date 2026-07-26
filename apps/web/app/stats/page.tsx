@@ -25,8 +25,8 @@ function StatTile({ value, label }: { value: number; label: string }) {
 function LoadingSkeleton() {
   return (
     <div className="space-y-8 animate-pulse">
-      <div className="grid grid-cols-2 gap-4">
-        {[...Array(2)].map((_, i) => (
+      <div className="grid grid-cols-1 gap-4">
+        {[...Array(1)].map((_, i) => (
           <div key={i} className="h-28 rounded-lg bg-[hsl(var(--muted))]" />
         ))}
       </div>
@@ -73,9 +73,8 @@ function StatsView({ stats }: { stats: Stats }) {
 
   return (
     <div className="space-y-10">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <StatTile value={stats.totalPageViews} label="Total page views" />
-        <StatTile value={stats.resumeDownloads} label="Résumé downloads" />
       </div>
 
       <div className="rounded-xl border border-[hsl(var(--border))] p-6">

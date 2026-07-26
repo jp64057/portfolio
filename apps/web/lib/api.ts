@@ -38,10 +38,6 @@ export async function sendContact(body: {
   })
 }
 
-export async function trackResumeDownload(): Promise<void> {
-  await fetch(`${BASE}/api/resume-download`, { method: 'POST' }).catch(() => {})
-}
-
 export interface ChatTurn {
   role: 'user' | 'assistant'
   content: string
@@ -93,7 +89,6 @@ export async function signGuestbook(body: {
 export interface Stats {
   totalPageViews: number
   pages: { path: string; views: number }[]
-  resumeDownloads: number
   generatedAt: string
 }
 

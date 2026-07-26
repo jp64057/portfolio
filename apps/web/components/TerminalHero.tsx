@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ResumeButton } from '@/components/ResumeButton'
-import { trackResumeDownload } from '@/lib/api'
+import { OPEN_RESUME_VIEWER_EVENT } from '@/components/ResumeViewer'
 
 // Boot sequence typed out on load (before the terminal becomes interactive).
 const BOOT: { prompt: boolean; text: string }[] = [
@@ -26,7 +26,7 @@ const HELP: string[] = [
   '  skills     jump to the skills section',
   '  github     jump to GitHub activity',
   '  contact    jump to the contact section',
-  '  resume     download my résumé (PDF)',
+  '  resume     view my résumé (PDF, opens in-page)',
   '  stats      open the site stats page',
   '  clear      clear the terminal',
 ]
@@ -106,14 +106,8 @@ export function TerminalHero() {
     })
   }, [])
 
-  const downloadResume = useCallback(() => {
-    const a = document.createElement('a')
-    a.href = '/resume.pdf'
-    a.download = 'jacob-prue-resume.pdf'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    void trackResumeDownload()
+  const viewResume = useCallback(() => {
+    window.dispatchEvent(new Event(OPEN_RESUME_VIEWER_EVENT))
   }, [])
 
   const runCommand = useCallback(
@@ -156,8 +150,8 @@ export function TerminalHero() {
           break
         case 'resume':
         case 'cv':
-          output = ['↓ downloading résumé (jacob-prue-resume.pdf)…']
-          downloadResume()
+          output = ['▸ opening résumé viewer…']
+          viewResume()
           break
         case 'stats':
           output = ['→ opening the stats page…']
@@ -174,7 +168,7 @@ export function TerminalHero() {
       }
       setEntries((prev) => [...prev, { command, output }])
     },
-    [scrollToSection, downloadResume, router],
+    [scrollToSection, viewResume, router],
   )
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

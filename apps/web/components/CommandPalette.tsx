@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { trackResumeDownload } from '@/lib/api'
+import { OPEN_RESUME_VIEWER_EVENT } from '@/components/ResumeViewer'
 
 type Command = {
   id: string
@@ -54,14 +54,8 @@ export function CommandPalette() {
     [router],
   )
 
-  const downloadResume = useCallback(() => {
-    const a = document.createElement('a')
-    a.href = '/resume.pdf'
-    a.download = 'jacob-prue-resume.pdf'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    void trackResumeDownload()
+  const viewResume = useCallback(() => {
+    window.dispatchEvent(new Event(OPEN_RESUME_VIEWER_EVENT))
   }, [])
 
   const commands = useMemo<Command[]>(() => {
@@ -73,7 +67,7 @@ export function CommandPalette() {
       { id: 'github', group: 'Navigate', label: 'Go to GitHub Activity', keywords: 'stats contributions', run: () => goToSection('github') },
       { id: 'contact', group: 'Navigate', label: 'Go to Contact', keywords: 'email message reach', run: () => goToSection('contact') },
       { id: 'stats', group: 'Navigate', label: 'Go to Stats page', keywords: 'analytics visitors', run: () => router.push('/stats') },
-      { id: 'resume', group: 'Actions', label: 'Download résumé', hint: 'PDF', keywords: 'cv download', run: downloadResume },
+      { id: 'resume', group: 'Actions', label: 'View résumé', hint: 'PDF', keywords: 'cv download view open', run: viewResume },
       {
         id: 'theme',
         group: 'Actions',
@@ -90,7 +84,7 @@ export function CommandPalette() {
         run: () => window.open('https://github.com/jp64057', '_blank', 'noopener,noreferrer'),
       },
     ]
-  }, [router, goToSection, downloadResume, setTheme, theme, resolvedTheme])
+  }, [router, goToSection, viewResume, setTheme, theme, resolvedTheme])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()

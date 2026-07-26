@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Site stats',
   description:
-    'Live, privacy-friendly traffic for jacob.prue.info — page views and résumé downloads, aggregated from DynamoDB by an AWS Lambda. No cookies, no third-party trackers.',
+    'Live, privacy-friendly traffic for jacob.prue.info — page views aggregated from DynamoDB by an AWS Lambda. No cookies, no third-party trackers.',
   alternates: { canonical: '/stats/' },
 }
 

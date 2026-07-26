@@ -1,9 +1,10 @@
 # Portfolio — Claude Code guide
 
 Personal portfolio: Next.js 15 static site on S3 + CloudFront, with serverless
-API (Lambda + API Gateway) for the contact form, GitHub stats, visitor counts,
-and resume-download tracking. All infra in Terraform; CI/CD via GitHub Actions
-with OIDC (no long-lived AWS keys in GitHub).
+API (Lambda + API Gateway) for the contact form, GitHub stats, and visitor
+counts. The résumé is shown in an in-site PDF.js viewer (no download). All infra
+in Terraform; CI/CD via GitHub Actions with OIDC (no long-lived AWS keys in
+GitHub).
 
 ## Layout (pnpm monorepo, Node ≥22, pnpm ≥9)
 
@@ -47,8 +48,8 @@ Gateway stage, or you run `sam local start-api`. In prod the frontend calls
 - **Site bucket:** `jp64057-portfolio-site`
 - **API Gateway v2 (HTTP):** `oba4jwe8k9` (`portfolio`), fronted at `/api/*`
 - **Lambdas (Node 22):** `portfolio-github-stats`, `portfolio-contact`,
-  `portfolio-resume-tracker`, `portfolio-visitor-counter`, `portfolio-stats`
-  (aggregates visitor/résumé counts for the `/stats` page); exec role
+  `portfolio-visitor-counter`, `portfolio-stats` (aggregates visitor counts for
+  the `/stats` page), `portfolio-guestbook`, `portfolio-chat`; exec role
   `portfolio-lambda-exec`
 - **DynamoDB:** table `portfolio`
 - **Terraform state:** S3 `jp64057-portfolio-tfstate` + lock table

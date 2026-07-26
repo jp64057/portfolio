@@ -22,6 +22,8 @@ test.describe('interactive terminal', () => {
   test('tappable command chip runs a command', async ({ page }) => {
     await page.goto('/')
     await page.getByRole('button', { name: 'about', exact: true }).click()
-    await expect(page.getByText(/Full-Stack & Cloud Engineer/)).toBeVisible()
+    // This line is unique to the `about` output (the boot banner also mentions
+    // the job title, which would otherwise match twice).
+    await expect(page.getByText(/scalable, cloud-native systems/)).toBeVisible()
   })
 })

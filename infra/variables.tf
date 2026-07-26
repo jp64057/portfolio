@@ -45,3 +45,10 @@ variable "guestbook_admin_token" {
   sensitive   = true
   default     = ""
 }
+
+variable "turnstile_secret_key" {
+  description = "Cloudflare Turnstile secret key for the contact-form CAPTCHA (defaults to CF's test secret)."
+  type        = string
+  sensitive   = true
+  default     = "1x0000000000000000000000000000000AA"
+}

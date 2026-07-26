@@ -27,3 +27,11 @@ variable "guestbook_admin_token" {
   default     = ""
   description = "Optional shared secret enabling DELETE /api/guestbook. Empty disables deletion."
 }
+
+variable "turnstile_secret_key" {
+  type      = string
+  sensitive = true
+  # Cloudflare's public "always passes" test secret — replace with a real key.
+  default     = "1x0000000000000000000000000000000AA"
+  description = "Cloudflare Turnstile secret key for verifying contact-form CAPTCHA tokens."
+}

@@ -29,6 +29,7 @@ export async function sendContact(body: {
   email: string
   message: string
   honeypot: string
+  turnstileToken?: string
 }): Promise<Response> {
   return fetch(`${BASE}/api/contact`, {
     method: 'POST',

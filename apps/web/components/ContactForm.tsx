@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState } from 'react'
 import { sendContact } from '@/lib/api'
+import { Turnstile } from '@/components/Turnstile'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -16,7 +17,10 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export function ContactForm() {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'rate-limited'>('idle')
+  const [status, setStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error' | 'rate-limited' | 'captcha'
+  >('idle')
+  const [turnstileToken, setTurnstileToken] = useState('')
   const {
     register,
     handleSubmit,
@@ -25,11 +29,17 @@ export function ContactForm() {
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   const onSubmit = async (data: FormData) => {
+    if (!turnstileToken) {
+      setStatus('captcha')
+      return
+    }
     setStatus('loading')
     try {
-      const res = await sendContact(data)
+      const res = await sendContact({ ...data, turnstileToken })
       if (res.status === 429) {
         setStatus('rate-limited')
+      } else if (res.status === 403) {
+        setStatus('captcha')
       } else if (res.ok) {
         setStatus('success')
         reset()
@@ -110,6 +120,13 @@ export function ContactForm() {
             )}
           </div>
 
+          <Turnstile onVerify={setTurnstileToken} onExpire={() => setTurnstileToken('')} />
+
+          {status === 'captcha' && (
+            <p role="alert" className="text-sm text-yellow-700 dark:text-yellow-400">
+              Please complete the CAPTCHA before sending.
+            </p>
+          )}
           {status === 'rate-limited' && (
             <p role="alert" className="text-sm text-yellow-700 dark:text-yellow-400">
               Too many requests — try again in an hour.

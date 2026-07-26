@@ -17,6 +17,7 @@ module "api" {
   github_pat            = var.github_pat
   github_repo           = var.github_repo
   guestbook_admin_token = var.guestbook_admin_token
+  turnstile_secret_key  = var.turnstile_secret_key
 }
 
 module "cdn" {

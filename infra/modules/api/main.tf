@@ -99,6 +99,9 @@ resource "aws_lambda_function" "functions" {
       GUESTBOOK_AUTO_APPROVE = "true"
       # Empty = admin delete disabled. Set a token to enable DELETE /api/guestbook.
       GUESTBOOK_ADMIN_TOKEN = var.guestbook_admin_token
+      # Cloudflare Turnstile secret for the contact form (defaults to CF's
+      # always-pass test secret; set a real one for actual spam protection).
+      TURNSTILE_SECRET_KEY = var.turnstile_secret_key
     }
   }
 

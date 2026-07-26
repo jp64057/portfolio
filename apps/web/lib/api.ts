@@ -41,6 +41,32 @@ export async function trackResumeDownload(): Promise<void> {
   await fetch(`${BASE}/api/resume-download`, { method: 'POST' }).catch(() => {})
 }
 
+export interface GuestbookEntry {
+  id: string
+  name: string
+  message: string
+  createdAt: string
+}
+
+export async function fetchGuestbook(): Promise<GuestbookEntry[]> {
+  const res = await fetch(`${BASE}/api/guestbook`)
+  if (!res.ok) throw new Error('Failed to load guestbook')
+  const data = await res.json()
+  return data.entries as GuestbookEntry[]
+}
+
+export async function signGuestbook(body: {
+  name: string
+  message: string
+  honeypot: string
+}): Promise<Response> {
+  return fetch(`${BASE}/api/guestbook`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
 export interface Stats {
   totalPageViews: number
   pages: { path: string; views: number }[]

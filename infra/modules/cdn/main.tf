@@ -126,6 +126,11 @@ resource "aws_cloudfront_function" "url_rewrite" {
     function handler(event) {
       var req = event.request;
       var uri = req.uri;
+      // Next metadata image routes (opengraph-image / twitter-image) are real,
+      // extensionless files — serve them as-is, don't append /index.html.
+      if (uri.endsWith('/opengraph-image') || uri.endsWith('/twitter-image')) {
+        return req;
+      }
       // If the URI has no file extension, route to the index.html for that path
       if (!uri.includes('.')) {
         req.uri = uri.replace(/\/?$/, '/index.html');

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { OPEN_RESUME_VIEWER_EVENT } from '@/components/ResumeViewer'
 import { ACCENTS, accentLabel, setAccent, isCrt, setCrt } from '@/lib/accent'
+import { sendChat, type ChatTurn } from '@/lib/api'
 
 type Command = {
   id: string
@@ -12,11 +13,20 @@ type Command = {
   hint?: string
   group: string
   keywords?: string
+  // Ask-AI items keep the palette open (they switch it into chat mode).
+  keepOpen?: boolean
   run: () => void
 }
 
 // Dispatch this event (e.g. from a Nav button) to open the palette without a keyboard.
 export const OPEN_COMMAND_PALETTE_EVENT = 'open-command-palette'
+
+// Shown as one-tap prompts when the palette opens with an empty query.
+const SUGGESTED = [
+  "What's your experience with AWS?",
+  'Summarize your tech stack',
+  'What are you most proud of building?',
+]
 
 function prefersReducedMotion() {
   return (
@@ -32,9 +42,15 @@ export function CommandPalette() {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
 
+  // Ask-AI mode: the palette becomes a spotlight chat over /api/chat.
+  const [mode, setMode] = useState<'command' | 'ask'>('command')
+  const [thread, setThread] = useState<ChatTurn[]>([])
+  const [asking, setAsking] = useState(false)
+
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
+  const threadRef = useRef<HTMLDivElement>(null)
   // Element focused before the palette opened, so we can restore focus on close.
   const restoreFocusRef = useRef<HTMLElement | null>(null)
 
@@ -57,6 +73,43 @@ export function CommandPalette() {
 
   const viewResume = useCallback(() => {
     window.dispatchEvent(new Event(OPEN_RESUME_VIEWER_EVENT))
+  }, [])
+
+  // Send a question to the résumé chatbot and append the answer to the thread.
+  const ask = useCallback(async (question: string, history: ChatTurn[]) => {
+    const q = question.trim()
+    if (!q) return
+    const next: ChatTurn[] = [...history, { role: 'user', content: q }]
+    setThread(next)
+    setQuery('')
+    setAsking(true)
+    try {
+      const { reply } = await sendChat(next)
+      setThread((prev) => [...prev, { role: 'assistant', content: reply }])
+    } catch {
+      setThread((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' },
+      ])
+    } finally {
+      setAsking(false)
+    }
+  }, [])
+
+  const startAsk = useCallback(
+    (question: string) => {
+      setMode('ask')
+      void ask(question, [])
+    },
+    [ask],
+  )
+
+  const exitAsk = useCallback(() => {
+    setMode('command')
+    setThread([])
+    setQuery('')
+    setActive(0)
+    requestAnimationFrame(() => inputRef.current?.focus())
   }, [])
 
   const commands = useMemo<Command[]>(() => {
@@ -103,11 +156,33 @@ export function CommandPalette() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return commands
-    return commands.filter(
-      (c) => c.label.toLowerCase().includes(q) || c.keywords?.toLowerCase().includes(q),
-    )
-  }, [commands, query])
+    const base = q
+      ? commands.filter(
+          (c) => c.label.toLowerCase().includes(q) || c.keywords?.toLowerCase().includes(q),
+        )
+      : commands
+    // Ask-AI items: one "ask this" when there's a query, else the suggestions.
+    const askItems: Command[] = query.trim()
+      ? [
+          {
+            id: 'ask',
+            group: 'Ask AI',
+            label: `Ask my résumé: “${query.trim()}”`,
+            hint: '↵',
+            keepOpen: true,
+            run: () => startAsk(query.trim()),
+          },
+        ]
+      : SUGGESTED.map((s, i) => ({
+          id: `ask-${i}`,
+          group: 'Ask AI',
+          label: s,
+          keywords: 'ai ask question résumé',
+          keepOpen: true,
+          run: () => startAsk(s),
+        }))
+    return [...base, ...askItems]
+  }, [commands, query, startAsk])
 
   // Global open shortcut: ⌘K / Ctrl-K, plus a custom event for non-keyboard triggers.
   useEffect(() => {
@@ -132,6 +207,8 @@ export function CommandPalette() {
     restoreFocusRef.current = document.activeElement as HTMLElement | null
     setQuery('')
     setActive(0)
+    setMode('command')
+    setThread([])
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     // Focus after paint so the input is mounted.
@@ -154,16 +231,31 @@ export function CommandPalette() {
       ?.scrollIntoView({ block: 'nearest' })
   }, [active])
 
+  // Keep the chat thread scrolled to the newest message.
+  useEffect(() => {
+    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight })
+  }, [thread, asking])
+
   const runCommand = useCallback(
     (cmd: Command | undefined) => {
       if (!cmd) return
-      close()
+      if (!cmd.keepOpen) close()
       cmd.run()
     },
     [close],
   )
 
   const onDialogKeyDown = (e: React.KeyboardEvent) => {
+    if (mode === 'ask') {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        exitAsk()
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        if (!asking) void ask(query, thread)
+      }
+      return
+    }
     if (e.key === 'Escape') {
       e.preventDefault()
       close()
@@ -207,17 +299,19 @@ export function CommandPalette() {
       >
         <div className="flex items-center gap-2 border-b border-[hsl(var(--border))] px-4">
           <span className="font-mono text-[hsl(var(--accent))]" aria-hidden>
-            ›
+            {mode === 'ask' ? '✦' : '›'}
           </span>
           <input
             ref={inputRef}
             type="text"
-            role="combobox"
-            aria-expanded="true"
-            aria-controls="command-list"
-            aria-activedescendant={filtered[active] ? `command-${filtered[active].id}` : undefined}
-            aria-autocomplete="list"
-            placeholder="Type a command or search…"
+            role={mode === 'ask' ? 'textbox' : 'combobox'}
+            aria-expanded={mode === 'ask' ? undefined : true}
+            aria-controls={mode === 'ask' ? undefined : 'command-list'}
+            aria-activedescendant={
+              mode === 'ask' ? undefined : filtered[active] ? `command-${filtered[active].id}` : undefined
+            }
+            aria-autocomplete={mode === 'ask' ? undefined : 'list'}
+            placeholder={mode === 'ask' ? 'Ask a follow-up… (esc to exit)' : 'Type a command, search, or ask a question…'}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
@@ -230,55 +324,83 @@ export function CommandPalette() {
           </kbd>
         </div>
 
-        <div
-          ref={listRef}
-          id="command-list"
-          role="listbox"
-          aria-label="Commands"
-          className="max-h-72 overflow-y-auto p-2"
-        >
-          {filtered.length === 0 && (
-            <p className="px-3 py-6 text-center font-mono text-sm text-[hsl(var(--muted-foreground))]">
-              No matching commands
+        {mode === 'ask' ? (
+          <div ref={threadRef} className="max-h-80 space-y-3 overflow-y-auto p-4" aria-live="polite">
+            <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+              Ask my résumé · esc to exit
             </p>
-          )}
-          {filtered.map((cmd) => {
-            renderIndex += 1
-            const index = renderIndex
-            const showGroup = cmd.group !== lastGroup
-            lastGroup = cmd.group
-            const isActive = index === active
-            return (
-              <div key={cmd.id}>
-                {showGroup && (
-                  <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
-                    {cmd.group}
-                  </div>
-                )}
-                <button
-                  id={`command-${cmd.id}`}
-                  data-index={index}
-                  role="option"
-                  aria-selected={isActive}
-                  onMouseMove={() => setActive(index)}
-                  onClick={() => runCommand(cmd)}
-                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-mono text-sm transition-colors ${
-                    isActive
+            {thread.map((m, i) => (
+              <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+                <div
+                  className={`max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${
+                    m.role === 'user'
                       ? 'bg-[hsl(var(--accent-solid))] text-white'
-                      : 'text-[hsl(var(--foreground))]'
+                      : 'bg-[hsl(var(--muted))] text-[hsl(var(--foreground))]'
                   }`}
                 >
-                  <span>{cmd.label}</span>
-                  {cmd.hint && (
-                    <span className={isActive ? 'text-white/70' : 'text-[hsl(var(--muted-foreground))]'}>
-                      {cmd.hint}
-                    </span>
-                  )}
-                </button>
+                  {m.content}
+                </div>
               </div>
-            )
-          })}
-        </div>
+            ))}
+            {asking && (
+              <div className="flex justify-start">
+                <div className="rounded-lg bg-[hsl(var(--muted))] px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">
+                  <span className="animate-pulse">…thinking</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div
+            ref={listRef}
+            id="command-list"
+            role="listbox"
+            aria-label="Commands"
+            className="max-h-72 overflow-y-auto p-2"
+          >
+            {filtered.length === 0 && (
+              <p className="px-3 py-6 text-center font-mono text-sm text-[hsl(var(--muted-foreground))]">
+                No matching commands
+              </p>
+            )}
+            {filtered.map((cmd) => {
+              renderIndex += 1
+              const index = renderIndex
+              const showGroup = cmd.group !== lastGroup
+              lastGroup = cmd.group
+              const isActive = index === active
+              return (
+                <div key={cmd.id}>
+                  {showGroup && (
+                    <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                      {cmd.group}
+                    </div>
+                  )}
+                  <button
+                    id={`command-${cmd.id}`}
+                    data-index={index}
+                    role="option"
+                    aria-selected={isActive}
+                    onMouseMove={() => setActive(index)}
+                    onClick={() => runCommand(cmd)}
+                    className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-mono text-sm transition-colors ${
+                      isActive
+                        ? 'bg-[hsl(var(--accent-solid))] text-white'
+                        : 'text-[hsl(var(--foreground))]'
+                    }`}
+                  >
+                    <span>{cmd.label}</span>
+                    {cmd.hint && (
+                      <span className={isActive ? 'text-white/70' : 'text-[hsl(var(--muted-foreground))]'}>
+                        {cmd.hint}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

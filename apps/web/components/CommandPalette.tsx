@@ -237,10 +237,24 @@ export function CommandPalette() {
   }, [thread, asking])
 
   // Entering ask mode by mouse-clicking a suggestion loses focus (the option
-  // button unmounts). Re-focus the input so esc/enter keep working.
+  // button unmounts). Re-focus the input so enter keeps working.
   useEffect(() => {
     if (mode === 'ask') requestAnimationFrame(() => inputRef.current?.focus())
   }, [mode])
+
+  // Handle Escape at the document level so it works regardless of where focus
+  // landed (e.g. after a mouse click): first press exits ask mode, then closes.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      if (mode === 'ask') exitAsk()
+      else close()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, mode, exitAsk, close])
 
   const runCommand = useCallback(
     (cmd: Command | undefined) => {
@@ -252,20 +266,15 @@ export function CommandPalette() {
   )
 
   const onDialogKeyDown = (e: React.KeyboardEvent) => {
+    // Escape is handled at the document level (see effect above).
     if (mode === 'ask') {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        exitAsk()
-      } else if (e.key === 'Enter') {
+      if (e.key === 'Enter') {
         e.preventDefault()
         if (!asking) void ask(query, thread)
       }
       return
     }
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      close()
-    } else if (e.key === 'ArrowDown') {
+    if (e.key === 'ArrowDown') {
       e.preventDefault()
       setActive((i) => (filtered.length ? (i + 1) % filtered.length : 0))
     } else if (e.key === 'ArrowUp') {

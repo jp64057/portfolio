@@ -236,6 +236,12 @@ export function CommandPalette() {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight })
   }, [thread, asking])
 
+  // Entering ask mode by mouse-clicking a suggestion loses focus (the option
+  // button unmounts). Re-focus the input so esc/enter keep working.
+  useEffect(() => {
+    if (mode === 'ask') requestAnimationFrame(() => inputRef.current?.focus())
+  }, [mode])
+
   const runCommand = useCallback(
     (cmd: Command | undefined) => {
       if (!cmd) return

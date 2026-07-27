@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { ResumeButton } from '@/components/ResumeButton'
 import { OPEN_RESUME_VIEWER_EVENT } from '@/components/ResumeViewer'
+import { HeroBackdrop } from '@/components/HeroBackdrop'
 
 // Boot sequence typed out on load (before the terminal becomes interactive).
 const BOOT: { prompt: boolean; text: string }[] = [
@@ -284,7 +285,8 @@ export function TerminalHero() {
   }
 
   return (
-    <section>
+    <section className="relative isolate">
+      <HeroBackdrop />
       <div
         className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))] p-6 font-mono text-sm leading-7"
         onClick={() => booted && inputRef.current?.focus()}

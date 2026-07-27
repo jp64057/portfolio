@@ -25,7 +25,18 @@ pnpm lint                    # web (next lint + tsc) + api
 pnpm test                    # api tests (vitest)
 pnpm --filter web test:unit  # web unit tests (vitest, lib/**/*.test.ts)
 pnpm --filter web build && pnpm --filter web test:e2e  # Playwright E2E vs the static export
+pnpm verify                  # run all of the above (typecheck/lint/build/tests) pre-PR
 ```
+
+`pnpm verify` (→ `scripts/dev-verify.sh [web|api|all]`) mirrors CI and papers
+over a couple of pnpm-v11-on-a-dev-box quirks (eslint plugins not hoisted into
+`apps/web`; a missing `next` bin shim) that CI on pnpm 9 doesn't hit.
+
+OpenGraph/Twitter cards are generated at build by `app/**/opengraph-image.tsx`
+/ `twitter-image.tsx` (Next `ImageResponse`) via a shared renderer in
+`app/_og/og.tsx`, using the committed DejaVu Sans Mono TTFs. Each route sets
+`dynamic = 'force-static'` (required under `output: export`), and
+`deploy-frontend` re-uploads the extensionless outputs with `image/png`.
 
 E2E tests live in `apps/web/e2e/*.spec.ts` and run against the real static
 export (`out/`) served by `apps/web/tests/static-server.mjs`. They need the

@@ -4,6 +4,7 @@ import { GithubStatsCard } from '@/components/GithubStatsCard'
 import { ContactForm } from '@/components/ContactForm'
 import { ProjectCard } from '@/components/ProjectCard'
 import { Guestbook } from '@/components/Guestbook'
+import { Timeline } from '@/components/Timeline'
 import { Reveal } from '@/components/Reveal'
 
 // The guestbook is opt-in. Set NEXT_PUBLIC_ENABLE_GUESTBOOK=true at build to
@@ -43,6 +44,13 @@ export default function Home() {
         <section id="skills" aria-labelledby="skills-heading">
           <h2 id="skills-heading" className="text-2xl font-bold mb-8">Skills</h2>
           <SkillsChart />
+        </section>
+      </Reveal>
+
+      <Reveal>
+        <section id="journey" aria-labelledby="journey-heading">
+          <h2 id="journey-heading" className="text-2xl font-bold mb-8">Journey</h2>
+          <Timeline />
         </section>
       </Reveal>
 

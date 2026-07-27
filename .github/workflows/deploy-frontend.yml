@@ -74,11 +74,13 @@ jobs:
       - name: Set image/png on generated OG cards
         # Next emits the metadata image routes as extensionless files
         # (opengraph-image, twitter-image, …); `aws s3 sync` can't infer their
-        # type, so social scrapers would see octet-stream. Force image/png.
+        # type, so social scrapers would see octet-stream. Re-upload the local
+        # build outputs with the right type. (Uploading from disk needs only
+        # PutObject — the deploy role has no GetObject, so a copy-in-place with
+        # --metadata-directive REPLACE would 403 on HeadObject.)
         run: |
           for key in opengraph-image twitter-image stats/opengraph-image stats/twitter-image; do
-            aws s3 cp "s3://${{ secrets.S3_BUCKET }}/$key" "s3://${{ secrets.S3_BUCKET }}/$key" \
-              --metadata-directive REPLACE \
+            aws s3 cp "apps/web/out/$key" "s3://${{ secrets.S3_BUCKET }}/$key" \
               --content-type image/png \
               --cache-control "public,max-age=3600"
           done

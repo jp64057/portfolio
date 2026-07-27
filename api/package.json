@@ -10,14 +10,14 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
-    "@aws-sdk/client-dynamodb": "^3.844.0",
-    "@aws-sdk/client-ses": "^3.844.0",
-    "@aws-sdk/lib-dynamodb": "^3.844.0"
+    "@aws-sdk/client-dynamodb": "^3.1095.0",
+    "@aws-sdk/client-ses": "^3.1095.0",
+    "@aws-sdk/lib-dynamodb": "^3.1095.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.149",
     "@types/node": "^22",
-    "esbuild": "^0.25.5",
+    "esbuild": "^0.28.1",
     "typescript": "^5",
     "vitest": "^3.2.4"
   }

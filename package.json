@@ -5,7 +5,8 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "lint": "pnpm --filter web lint && pnpm --filter api lint",
-    "test": "pnpm --filter api test"
+    "test": "pnpm --filter api test",
+    "verify": "bash scripts/dev-verify.sh"
   },
   "engines": {
     "node": ">=22",

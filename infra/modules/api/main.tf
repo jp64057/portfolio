@@ -100,7 +100,7 @@ resource "aws_lambda_function" "functions" {
   memory_size   = try(local.function_overrides[each.key].memory_size, 128)
   # -1 = unreserved (no cap). chat/contact get a small cap (see function_overrides).
   reserved_concurrent_executions = try(local.function_overrides[each.key].reserved_concurrency, -1)
-  filename      = "${path.root}/../api/dist/${each.key}/handler.zip"
+  filename                       = "${path.root}/../api/dist/${each.key}/handler.zip"
 
   # Placeholder — the CI/CD pipeline updates the code on every deploy.
   # The first `terraform apply` will fail if dist/ doesn't exist yet;

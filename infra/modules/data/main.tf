@@ -19,4 +19,13 @@ resource "aws_dynamodb_table" "portfolio" {
     attribute_name = "ttl"
     enabled        = true
   }
+
+  # Recover from an accidental/malicious mass delete or bad write (issue #114).
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  # Prevent the table (guestbook + visitor data) from being dropped by
+  # `terraform destroy` or the broad terraform-ci role.
+  deletion_protection_enabled = true
 }

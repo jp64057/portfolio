@@ -11,7 +11,7 @@ vi.mock('@aws-sdk/client-ses', () => ({
   SendEmailCommand: class {},
 }))
 
-import { handler, verifyTurnstile } from './handler.js'
+import { handler, verifyTurnstile, validateContact } from './handler.js'
 
 const event = (body: unknown, ip = '9.9.9.9'): APIGatewayProxyEventV2 =>
   ({
@@ -96,5 +96,45 @@ describe('contact handler', () => {
     expect(res.statusCode).toBe(200)
     // one DynamoDB rate-limit put
     expect(mockSend).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects invalid input with 400 before any Turnstile/DynamoDB/SES call', async () => {
+    for (const bad of [
+      { name: '', email: 'a@b.co', message: 'hi' },
+      { name: 'Ada', email: 'not-an-email', message: 'hi' },
+      { name: 'Ada', email: 'a@b.co', message: '' },
+      { name: 'Ada', email: 'a@b.co', message: 'x'.repeat(5001) },
+      { name: 'Ada', email: { obj: true }, message: 'hi' },
+    ]) {
+      mockSend.mockClear()
+      const res = (await handler(event(bad))) as { statusCode: number }
+      expect(res.statusCode).toBe(400)
+      expect(mockSend).not.toHaveBeenCalled()
+    }
+  })
+
+  it('returns 400 on a malformed JSON body', async () => {
+    const res = (await handler({
+      requestContext: { http: { method: 'POST', sourceIp: '9.9.9.9' } },
+      body: '{not json',
+    } as unknown as import('aws-lambda').APIGatewayProxyEventV2)) as { statusCode: number }
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+describe('validateContact', () => {
+  it('accepts a normal submission and trims', () => {
+    expect(validateContact({ name: ' Ada ', email: ' a@b.co ', message: ' hi ' })).toEqual({
+      valid: true,
+      name: 'Ada',
+      email: 'a@b.co',
+      message: 'hi',
+    })
+  })
+  it('rejects bad name/email/message', () => {
+    expect(validateContact({ name: '', email: 'a@b.co', message: 'x' }).valid).toBe(false)
+    expect(validateContact({ name: 'A', email: 'nope', message: 'x' }).valid).toBe(false)
+    expect(validateContact({ name: 'A', email: 'a@b.co', message: '' }).valid).toBe(false)
+    expect(validateContact({ name: 123, email: 'a@b.co', message: 'x' }).valid).toBe(false)
   })
 })

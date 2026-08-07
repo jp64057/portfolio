@@ -8,7 +8,7 @@ vi.mock('../../shared/dynamo.js', () => ({
   TABLE: 'portfolio',
 }))
 
-import { handler, validateSubmission, containsProfanity, MAX_MESSAGE } from './handler.js'
+import { handler, validateSubmission, containsProfanity, MAX_MESSAGE, safeEqual } from './handler.js'
 
 const post = (body: unknown, ip = '1.2.3.4'): APIGatewayProxyEventV2 =>
   ({
@@ -101,5 +101,37 @@ describe('handler', () => {
       body: '{}',
     } as unknown as APIGatewayProxyEventV2)) as { statusCode: number }
     expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 401 for DELETE with a wrong admin token (no write)', async () => {
+    process.env.GUESTBOOK_ADMIN_TOKEN = 'secret-token'
+    const res = (await handler({
+      requestContext: { http: { method: 'DELETE' } },
+      headers: { 'x-admin-token': 'wrong' },
+      body: JSON.stringify({ id: 'x', createdAt: '2026-01-01T00:00:00.000Z' }),
+    } as unknown as APIGatewayProxyEventV2)) as { statusCode: number }
+    expect(res.statusCode).toBe(401)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('deletes with the correct admin token', async () => {
+    process.env.GUESTBOOK_ADMIN_TOKEN = 'secret-token'
+    mockSend.mockResolvedValueOnce({})
+    const res = (await handler({
+      requestContext: { http: { method: 'DELETE' } },
+      headers: { 'x-admin-token': 'secret-token' },
+      body: JSON.stringify({ id: 'abc', createdAt: '2026-01-01T00:00:00.000Z' }),
+    } as unknown as APIGatewayProxyEventV2)) as { statusCode: number }
+    expect(res.statusCode).toBe(200)
+    expect(mockSend).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('safeEqual', () => {
+  it('is true only for equal strings and false on any mismatch/length', () => {
+    expect(safeEqual('token', 'token')).toBe(true)
+    expect(safeEqual('token', 'toke')).toBe(false)
+    expect(safeEqual('token', 'Token')).toBe(false)
+    expect(safeEqual('', '')).toBe(true)
   })
 })

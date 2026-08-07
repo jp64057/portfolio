@@ -145,10 +145,33 @@ resource "aws_apigatewayv2_api" "portfolio" {
   }
 }
 
+# Per-request audit trail for the API (source IP, route, status, latency) — the
+# forensic record for the abuse-prone endpoints. Short retention to bound cost.
+# (issue #115)
+resource "aws_cloudwatch_log_group" "api_access" {
+  name              = "/aws/apigateway/portfolio-access"
+  retention_in_days = 14
+}
+
 resource "aws_apigatewayv2_stage" "prod" {
   api_id      = aws_apigatewayv2_api.portfolio.id
   name        = "$default"
   auto_deploy = true
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_access.arn
+    format = jsonencode({
+      requestId    = "$context.requestId"
+      ip           = "$context.identity.sourceIp"
+      requestTime  = "$context.requestTime"
+      httpMethod   = "$context.httpMethod"
+      routeKey     = "$context.routeKey"
+      path         = "$context.path"
+      status       = "$context.status"
+      responseLen  = "$context.responseLength"
+      integrationErr = "$context.integrationErrorMessage"
+    })
+  }
 
   # HTTP APIs have no throttling unless set — without this, every route is
   # reachable at the account soft limit (~10k rps). A global backstop protects

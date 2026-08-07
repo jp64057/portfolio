@@ -101,7 +101,11 @@ Gateway stage, or you run `sam local start-api`. In prod the frontend calls
 - You can still apply infra locally instead of via CI:
   `cd infra && terraform init && terraform apply -var-file=environments/prod/terraform.tfvars`
   (fill the `ses_*` addresses in that tfvars first).
-- CloudFront uses the default `*.cloudfront.net` cert — no custom domain.
+- CloudFront serves the custom domain `jacob.prue.info` with an ACM cert
+  (us-east-1), viewer TLS floor `TLSv1.2_2021`. The default `*.cloudfront.net`
+  domain still resolves in parallel (same security-headers policy applies). The
+  certless module fallback (default cert, forced `TLSv1`) is a non-prod
+  bootstrap path only.
 - Lambda bundles are CJS (a past fix for a dynamic-require error).
 
 ## Local AWS CLI

@@ -76,6 +76,14 @@ resource "aws_s3_bucket" "site" {
   bucket = local.bucket_name
 }
 
+# Object-level rollback / accidental-overwrite recovery. (issue #116)
+resource "aws_s3_bucket_versioning" "site" {
+  bucket = aws_s3_bucket.site.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 resource "aws_s3_bucket_public_access_block" "site" {
   bucket                  = aws_s3_bucket.site.id
   block_public_acls       = true
@@ -89,17 +97,33 @@ resource "aws_s3_bucket_policy" "site" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "cloudfront.amazonaws.com" }
-      Action    = "s3:GetObject"
-      Resource  = "${aws_s3_bucket.site.arn}/*"
-      Condition = {
-        StringEquals = {
-          "AWS:SourceArn" = aws_cloudfront_distribution.site.arn
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = { Service = "cloudfront.amazonaws.com" }
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.site.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.site.arn
+          }
         }
-      }
-    }]
+      },
+      # Defense-in-depth: reject any non-TLS access to the bucket/objects. (#116)
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.site.arn,
+          "${aws_s3_bucket.site.arn}/*",
+        ]
+        Condition = {
+          Bool = { "aws:SecureTransport" = "false" }
+        }
+      },
+    ]
   })
 }
 
@@ -234,6 +258,11 @@ resource "aws_cloudfront_distribution" "site" {
     cloudfront_default_certificate = var.acm_certificate_arn == "" ? true : null
     acm_certificate_arn            = var.acm_certificate_arn == "" ? null : var.acm_certificate_arn
     ssl_support_method             = var.acm_certificate_arn == "" ? null : "sni-only"
-    minimum_protocol_version       = var.acm_certificate_arn == "" ? "TLSv1" : "TLSv1.2_2021"
+    # Prod always supplies a real ACM cert → TLSv1.2_2021 (modern floor). The
+    # "" branch is a non-prod bootstrap on the default *.cloudfront.net cert,
+    # where AWS *requires* minimum_protocol_version = "TLSv1" (you cannot set a
+    # higher floor with the default cert). So TLSv1 here is unavoidable and only
+    # ever applies to a certless bootstrap, never to the live site. (issue #116)
+    minimum_protocol_version = var.acm_certificate_arn == "" ? "TLSv1" : "TLSv1.2_2021"
   }
 }

@@ -6,6 +6,7 @@ import { useTheme } from 'next-themes'
 import { ResumeButton } from '@/components/ResumeButton'
 import { OPEN_RESUME_VIEWER_EVENT } from '@/components/ResumeViewer'
 import { HeroBackdrop } from '@/components/HeroBackdrop'
+import { JpMark } from '@/components/JpMark'
 
 // Boot sequence typed out on load (before the terminal becomes interactive).
 const BOOT: { prompt: boolean; text: string }[] = [
@@ -369,15 +370,23 @@ export function TerminalHero() {
         )}
       </div>
 
-      <div className="mt-8">
-        <h1 className="text-4xl font-bold tracking-tight">
-          Hi, I&apos;m <span className="text-[hsl(var(--accent))]">Jacob Prue</span>
-        </h1>
-        <p className="mt-3 text-lg text-[hsl(var(--muted-foreground))] max-w-xl">
-          Full-stack engineer building scalable systems with React, Node.js, and AWS.
-          I care about infrastructure as code, type safety, and shipping things that actually work.
-        </p>
-        <div className="mt-6 flex gap-4">
+      <div className="mt-8 flex flex-col items-center gap-6 sm:flex-row sm:items-start sm:gap-8">
+        <JpMark
+          size={132}
+          spin={16}
+          radius="18px"
+          label="Jacob Prue monogram"
+          className="shrink-0 shadow-lg shadow-black/20"
+        />
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight">
+            Hi, I&apos;m <span className="text-[hsl(var(--accent))]">Jacob Prue</span>
+          </h1>
+          <p className="mt-3 text-lg text-[hsl(var(--muted-foreground))] max-w-xl">
+            Full-stack engineer building scalable systems with React, Node.js, and AWS.
+            I care about infrastructure as code, type safety, and shipping things that actually work.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-4">
           <a
             href="#contact"
             className="rounded-lg bg-[hsl(var(--accent-solid))] px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
@@ -391,6 +400,7 @@ export function TerminalHero() {
             View projects
           </a>
           <ResumeButton />
+          </div>
         </div>
       </div>
     </section>

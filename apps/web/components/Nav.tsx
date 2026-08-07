@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { OPEN_COMMAND_PALETTE_EVENT } from '@/components/CommandPalette'
+import { JpMark } from '@/components/JpMark'
 
 export function Nav() {
   const { theme, setTheme } = useTheme()
@@ -13,8 +14,9 @@ export function Nav() {
   return (
     <header className="sticky top-0 z-50 border-b border-[hsl(var(--border))] bg-[hsl(var(--background)/0.8)] backdrop-blur">
       <nav className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-        <Link href="/" className="font-mono font-bold tracking-tight">
-          Jacob Prue
+        <Link href="/" className="group flex items-center gap-2.5" aria-label="Jacob Prue — home">
+          <JpMark size={28} steps={26} spin={14} className="shrink-0 rounded-[6px]" />
+          <span className="font-mono font-bold tracking-tight">Jacob Prue</span>
         </Link>
         <div className="flex items-center gap-6 text-sm">
           <Link href="/#projects" className="hover:text-[hsl(var(--accent))] transition-colors">Projects</Link>

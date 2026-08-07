@@ -144,3 +144,42 @@
     animation: none !important;
   }
 }
+
+/* ── JP monogram (see components/JpMark.tsx) ───────────────────────────────
+   The mark renders static; it only spins + hue-cycles while hovered, and only
+   for users who haven't asked to reduce motion. --jp-h drives the chrome hue.
+   The plain fallback below keeps the mark coloured even where @property is
+   unsupported (var() would otherwise resolve empty and void the oklch()). */
+@property --jp-h {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 250;
+}
+.jp-mark {
+  --jp-h: 250;
+}
+@keyframes jp-spin {
+  from {
+    transform: rotateX(7deg) rotateY(-20deg);
+  }
+  to {
+    transform: rotateX(7deg) rotateY(340deg);
+  }
+}
+@keyframes jp-hue {
+  from {
+    --jp-h: 0;
+  }
+  to {
+    --jp-h: 360;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .jp-mark:hover .jp-spinner {
+    animation: jp-spin var(--jp-spin, 22s) linear infinite;
+  }
+  .jp-mark:hover .jp-face {
+    animation: jp-hue var(--jp-hue, 60s) linear infinite;
+    animation-delay: var(--jp-delay, 0s);
+  }
+}

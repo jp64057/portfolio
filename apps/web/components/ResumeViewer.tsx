@@ -57,6 +57,20 @@ export function ResumeViewer() {
     }
   }, [open])
 
+  // Handle Escape at the document level so it closes the viewer regardless of
+  // where focus happens to be (the close-button focus lands on a rAF, which can
+  // be delayed on a busy page) — mirrors the command palette's approach.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      close()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, close])
+
   // Lazy-load pdf.js and the document when the viewer first opens.
   useEffect(() => {
     if (!open || pdfRef.current) return
@@ -128,10 +142,8 @@ export function ResumeViewer() {
   }, [status, scale, numPages])
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      close()
-    } else if (e.key === 'Tab') {
+    // Escape is handled at the document level (see effect above).
+    if (e.key === 'Tab') {
       // Simple focus trap: keep focus inside the dialog.
       const focusables = dialogRef.current?.querySelectorAll<HTMLElement>(
         'button, [href], input, [tabindex]:not([tabindex="-1"])',

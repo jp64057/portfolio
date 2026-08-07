@@ -25,7 +25,9 @@ api/dist/
 infra/.terraform/
 infra/.terraform.lock.hcl
 infra/**/*.tfplan
-infra/environments/prod/terraform.tfvars.local
+# Local secret overrides for any environment (committed tfvars stay non-secret).
+infra/environments/**/terraform.tfvars.local
+infra/environments/**/*.auto.tfvars
 *.tfstate
 *.tfstate.backup
 

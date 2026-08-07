@@ -3,6 +3,7 @@ import { PutCommand } from '@aws-sdk/lib-dynamodb'
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { ddb, TABLE } from '../../shared/dynamo.js'
 import { ok, err } from '../../shared/response.js'
+import { clientIp } from '../../shared/request.js'
 
 const ses = new SESClient({ region: 'us-east-1' })
 const FROM = process.env.SES_FROM_ADDRESS ?? ''
@@ -36,7 +37,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   // bots don't learn they were filtered.
   if (honeypot) return ok({ received: true })
 
-  const ip = event.requestContext.http.sourceIp
+  const ip = clientIp(event)
 
   // CAPTCHA: verify before consuming the IP's rate-limit slot, so a legit user
   // who fails/expires the challenge can retry.

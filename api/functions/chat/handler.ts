@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb'
 import { ddb, TABLE } from '../../shared/dynamo.js'
 import { ok, err } from '../../shared/response.js'
+import { clientIp } from '../../shared/request.js'
 
 // Model is env-configurable. Defaults to Haiku 4.5 (cheapest/fastest); set
 // CHAT_MODEL to claude-opus-4-8 for a more capable (pricier) résumé bot.
@@ -124,7 +125,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     return err('A user message is required', 400)
   }
 
-  const ip = event.requestContext?.http?.sourceIp ?? 'unknown'
+  const ip = clientIp(event)
 
   try {
     if (!(await checkRateLimit(ip))) {

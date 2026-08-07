@@ -20,6 +20,7 @@ module "api" {
   turnstile_secret_key  = var.turnstile_secret_key
   anthropic_api_key     = var.anthropic_api_key
   chat_model            = var.chat_model
+  allowed_origins       = ["https://${var.site_domain}"]
 }
 
 module "cdn" {

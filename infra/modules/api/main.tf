@@ -114,7 +114,7 @@ resource "aws_lambda_function" "functions" {
       SES_FROM_ADDRESS = var.ses_from_address
       SES_TO_ADDRESS   = var.ses_to_address
       GITHUB_PAT       = var.github_pat
-      ALLOWED_ORIGIN   = "*"
+      ALLOWED_ORIGIN   = var.allowed_origins[0]
       # Guestbook: flip to "false" to require manual approval before entries show.
       GUESTBOOK_AUTO_APPROVE = "true"
       # Empty = admin delete disabled. Set a token to enable DELETE /api/guestbook.
@@ -146,7 +146,7 @@ resource "aws_apigatewayv2_api" "portfolio" {
   protocol_type = "HTTP"
 
   cors_configuration {
-    allow_origins = ["*"]
+    allow_origins = var.allowed_origins
     allow_methods = ["GET", "POST", "OPTIONS"]
     allow_headers = ["Content-Type"]
     max_age       = 300

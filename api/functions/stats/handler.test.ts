@@ -18,11 +18,11 @@ beforeEach(() => {
 })
 
 describe('computeStats', () => {
-  it('aggregates page views', async () => {
+  it('aggregates page views from the shared stats partition', async () => {
     mockSend.mockResolvedValue({
       Items: [
-        { PK: 'visitor_count::/', count: 100 },
-        { PK: 'visitor_count::/projects', count: 40 },
+        { PK: 'stats', SK: 'page::/', views: 100 },
+        { PK: 'stats', SK: 'page::/projects', views: 40 },
       ],
     })
 
@@ -36,15 +36,15 @@ describe('computeStats', () => {
     expect(typeof stats.generatedAt).toBe('string')
   })
 
-  it('follows Scan pagination across pages', async () => {
+  it('follows Query pagination across pages', async () => {
     mockSend.mockImplementation((cmd: any) => {
       if (!cmd.input.ExclusiveStartKey) {
         return Promise.resolve({
-          Items: [{ PK: 'visitor_count::/', count: 10 }],
-          LastEvaluatedKey: { PK: 'visitor_count::/' },
+          Items: [{ PK: 'stats', SK: 'page::/', views: 10 }],
+          LastEvaluatedKey: { PK: 'stats', SK: 'page::/' },
         })
       }
-      return Promise.resolve({ Items: [{ PK: 'visitor_count::/blog', count: 5 }] })
+      return Promise.resolve({ Items: [{ PK: 'stats', SK: 'page::/blog', views: 5 }] })
     })
 
     const stats = await computeStats()
@@ -70,7 +70,7 @@ describe('handler', () => {
   })
 
   it('caches results and sets Cache-Control (runs last — populates the cache)', async () => {
-    mockSend.mockResolvedValue({ Items: [{ PK: 'visitor_count::/', count: 3 }] })
+    mockSend.mockResolvedValue({ Items: [{ PK: 'stats', SK: 'page::/', views: 3 }] })
 
     const first = (await handler({} as APIGatewayProxyEventV2)) as {
       statusCode: number
@@ -80,7 +80,7 @@ describe('handler', () => {
 
     expect(first.statusCode).toBe(200)
     expect(first.headers['Cache-Control']).toContain('max-age')
-    // One Scan for the first call; the second is served from cache.
+    // One Query for the first call; the second is served from cache.
     expect(mockSend).toHaveBeenCalledTimes(1)
     expect(second).toEqual(first)
   })

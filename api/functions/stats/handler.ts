@@ -1,9 +1,14 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
-import { ScanCommand } from '@aws-sdk/lib-dynamodb'
+import { QueryCommand } from '@aws-sdk/lib-dynamodb'
 import { ddb, TABLE } from '../../shared/dynamo.js'
 import { ok, err } from '../../shared/response.js'
 
-const VISITOR_PREFIX = 'visitor_count::'
+// Per-page view aggregates live under a single shared partition (PK='stats',
+// SK='page::<path>'), maintained by the visitor-counter Lambda. That lets us
+// Query them together instead of Scanning the whole shared table — cost is
+// O(pages) regardless of how large the table grows. See issue #99.
+const STATS_PK = 'stats'
+const PAGE_PREFIX = 'page::'
 const CACHE_TTL_MS = 60_000
 
 export interface Stats {
@@ -17,25 +22,23 @@ export interface Stats {
 let cache: { data: Stats; expires: number } | null = null
 
 export async function computeStats(): Promise<Stats> {
-  // Visitor counts live under a distinct PK per page (visitor_count::<page>),
-  // so they can't be Queried together — Scan with a prefix filter instead.
-  // The table is tiny; a filtered Scan is the right tool here.
   const pages: { path: string; views: number }[] = []
   let totalPageViews = 0
   let lastKey: Record<string, unknown> | undefined
 
+  // Query only the aggregate partition (paginate defensively; the set is small).
   do {
     const res = await ddb.send(
-      new ScanCommand({
+      new QueryCommand({
         TableName: TABLE,
-        FilterExpression: 'begins_with(PK, :prefix)',
-        ExpressionAttributeValues: { ':prefix': VISITOR_PREFIX },
+        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+        ExpressionAttributeValues: { ':pk': STATS_PK, ':prefix': PAGE_PREFIX },
         ExclusiveStartKey: lastKey,
       })
     )
     for (const item of res.Items ?? []) {
-      const path = String(item.PK).slice(VISITOR_PREFIX.length) || '/'
-      const views = Number(item.count) || 0
+      const path = String(item.SK).slice(PAGE_PREFIX.length) || '/'
+      const views = Number(item.views) || 0
       pages.push({ path, views })
       totalPageViews += views
     }

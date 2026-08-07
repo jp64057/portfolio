@@ -28,16 +28,30 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   const page = event.body && 'page' in body ? validatePage(body.page) : '/'
   if (page === null) return err('Invalid page', 400)
 
-  const result = await ddb.send(
-    new UpdateCommand({
-      TableName: TABLE,
-      Key: { PK: `visitor_count::${page}`, SK: 'count' },
-      UpdateExpression: 'ADD #count :one',
-      ExpressionAttributeNames: { '#count': 'count' },
-      ExpressionAttributeValues: { ':one': 1 },
-      ReturnValues: 'UPDATED_NEW',
-    })
-  )
+  // Primary per-page counter (source of the "N views on this page" footer).
+  const primary = new UpdateCommand({
+    TableName: TABLE,
+    Key: { PK: `visitor_count::${page}`, SK: 'count' },
+    UpdateExpression: 'ADD #count :one',
+    ExpressionAttributeNames: { '#count': 'count' },
+    ExpressionAttributeValues: { ':one': 1 },
+    ReturnValues: 'UPDATED_NEW',
+  })
+  // Mirror into a shared-PK aggregate so /api/stats can Query all pages at once
+  // instead of Scanning the whole table (issue #99). Best-effort: never fail a
+  // visit if the aggregate write hiccups.
+  const aggregate = new UpdateCommand({
+    TableName: TABLE,
+    Key: { PK: 'stats', SK: `page::${page}` },
+    UpdateExpression: 'ADD #views :one',
+    ExpressionAttributeNames: { '#views': 'views' },
+    ExpressionAttributeValues: { ':one': 1 },
+  })
+
+  const [result] = await Promise.all([
+    ddb.send(primary),
+    ddb.send(aggregate).catch((e) => console.error('stats aggregate update failed', e)),
+  ])
 
   const count = (result.Attributes?.count as number) ?? 1
   return ok({ count })

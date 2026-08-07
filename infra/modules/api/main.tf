@@ -13,14 +13,14 @@ locals {
   # `now` makes up to two sequential GitHub API calls (events + commit), which
   # can exceed the 3s default; give it more headroom + memory (faster CPU/net).
   #
-  # reserved_concurrency caps a function's max simultaneous executions. The
-  # cost-bearing endpoints (chat → paid Anthropic calls, contact → SES) get a
-  # small cap so a burst can't fan out into unbounded parallel invocations /
-  # cost; others stay unreserved (-1). (issue #106)
+  # NOTE (issue #106): per-function reserved concurrency is intentionally NOT
+  # set. This account's total concurrency limit is 10 (new-account default), and
+  # AWS requires UnreservedConcurrentExecution to stay >= 10 — so reserving any
+  # concurrency is rejected. That same low account limit already bounds the
+  # fan-out blast radius account-wide, so a per-function cap is unnecessary here.
   function_overrides = {
-    chat    = { timeout = 29, memory_size = 256, reserved_concurrency = 3 }
-    now     = { timeout = 10, memory_size = 256 }
-    contact = { reserved_concurrency = 3 }
+    chat = { timeout = 29, memory_size = 256 }
+    now  = { timeout = 10, memory_size = 256 }
   }
 }
 
@@ -98,9 +98,7 @@ resource "aws_lambda_function" "functions" {
   handler       = "handler.handler"
   timeout       = try(local.function_overrides[each.key].timeout, 3)
   memory_size   = try(local.function_overrides[each.key].memory_size, 128)
-  # -1 = unreserved (no cap). chat/contact get a small cap (see function_overrides).
-  reserved_concurrent_executions = try(local.function_overrides[each.key].reserved_concurrency, -1)
-  filename                       = "${path.root}/../api/dist/${each.key}/handler.zip"
+  filename      = "${path.root}/../api/dist/${each.key}/handler.zip"
 
   # Placeholder — the CI/CD pipeline updates the code on every deploy.
   # The first `terraform apply` will fail if dist/ doesn't exist yet;

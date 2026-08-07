@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Archivo_Black } from 'next/font/google'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Nav } from '@/components/Nav'
 import { Footer } from '@/components/Footer'
@@ -10,6 +10,8 @@ import './globals.css'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
+// Display face for the JP monogram (see components/JpMark.tsx).
+const archivoBlack = Archivo_Black({ subsets: ['latin'], weight: '400', variable: '--font-archivo' })
 
 const SITE_URL = 'https://jacob.prue.info'
 const DESCRIPTION =
@@ -83,7 +85,7 @@ const jsonLd = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
+      <body className={`${geist.variable} ${geistMono.variable} ${archivoBlack.variable} font-sans antialiased`}>
         {/* Apply the saved accent/CRT choice before first paint (no flash). */}
         <script
           dangerouslySetInnerHTML={{

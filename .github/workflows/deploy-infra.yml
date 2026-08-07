@@ -14,30 +14,82 @@ on:
         options: [plan, apply]
         default: plan
 
+# Least-privilege by default. Only the credentialed jobs opt into id-token.
 permissions:
-  id-token: write   # Required for OIDC
   contents: read
-  pull-requests: write  # Required to post plan comments
 
 env:
   TF_VERSION: '1.9.8'
   AWS_REGION: us-east-1
 
 jobs:
-  # Runs on every push/PR to infra/**, and on a manual "plan" dispatch.
-  # Never changes infrastructure — plan/dry-run only.
+  # PR checks: format + validate ONLY — no AWS credentials, no backend, no
+  # `terraform plan`. This is deliberate (issue #102): a credentialed plan on a
+  # pull_request would run PR-controlled HCL (data "external", module/provider
+  # sources) with the broad Terraform role. Validation runs offline against
+  # PR-controlled config with no secrets in scope, so there's nothing to abuse
+  # and no plan output to inject into a PR comment.
+  validate:
+    name: Terraform Validate (PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: ${{ github.workspace }}
+
+      # Lambda bundles must exist so source_code_hash expressions resolve during
+      # validate. This builds PR code with NO credentials (same as the test jobs).
+      - name: Bundle Lambda functions
+        run: pnpm --filter api build
+        working-directory: ${{ github.workspace }}
+
+      - name: Zip Lambda bundles
+        working-directory: ${{ github.workspace }}
+        run: |
+          for fn in api/dist/*/; do
+            name=$(basename "$fn")
+            (cd "$fn" && zip handler.zip handler.js)
+            echo "zipped $name"
+          done
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - run: terraform init -backend=false
+      - run: terraform fmt -check -recursive
+      - run: terraform validate
+
+  # Credentialed plan: only on push to main (post-merge, trusted code) and on a
+  # manual "plan" dispatch — never on a pull_request. Output goes to the log.
   plan:
     name: Terraform Plan
-    if: github.event_name != 'workflow_dispatch' || inputs.action == 'plan'
+    if: (github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.action == 'plan')
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     env:
       # Feeds var.anthropic_api_key → the chatbot Lambda's ANTHROPIC_API_KEY.
-      # Empty (secret unset) leaves the bot in graceful-fallback mode. Sensitive,
-      # so Terraform redacts it from plan output.
+      # Sensitive, so Terraform redacts it from plan output.
       TF_VAR_anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
       # Feeds var.turnstile_secret_key → the contact Lambda's TURNSTILE_SECRET_KEY.
-      # Sensitive, so Terraform redacts it. Set the GH secret before relying on
-      # this — an unset secret resolves to "" and overrides the tfvar default.
       TF_VAR_turnstile_secret_key: ${{ secrets.TURNSTILE_SECRET_KEY }}
     defaults:
       run:
@@ -82,32 +134,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - run: terraform init
-      - run: terraform fmt -check -recursive
-      - run: terraform validate
-      - id: plan
-        run: terraform plan -var-file=environments/prod/terraform.tfvars -no-color -out=tfplan
-        continue-on-error: true
-
-      - name: Post plan to PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v9
-        with:
-          script: |
-            const output = `#### Terraform Plan
-            \`\`\`
-            ${{ steps.plan.outputs.stdout }}
-            \`\`\`
-            *Pushed by @${{ github.actor }}*`;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output,
-            });
-
-      - name: Fail if plan failed
-        if: steps.plan.outcome == 'failure'
-        run: exit 1
+      - run: terraform plan -var-file=environments/prod/terraform.tfvars -no-color
 
   # Only runs on an explicit manual "apply" dispatch from the main branch.
   # Infrastructure is never changed automatically on push — apply is a
@@ -116,6 +143,9 @@ jobs:
     name: Terraform Apply (manual)
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'apply' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     env:
       # Feeds var.anthropic_api_key → the chatbot Lambda's ANTHROPIC_API_KEY.
       TF_VAR_anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}

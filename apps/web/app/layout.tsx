@@ -115,7 +115,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </ThemeProvider>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          // Escape `<` so a value can never break out of the <script> element
+          // (JSON.stringify does not). All values are static today; this keeps
+          // it safe if dynamic data is ever added. (issue #117)
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
         />
       </body>
     </html>

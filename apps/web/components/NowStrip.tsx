@@ -33,6 +33,9 @@ export function NowStrip() {
 
   if (!now?.latestCommit) return null
   const c = now.latestCommit
+  // Scheme-guard the API-supplied URL: React does not block javascript: URLs in
+  // href, so only allow https before rendering it into a link. (issue #117)
+  const safeUrl = /^https:\/\//.test(c.url) ? c.url : '#'
 
   return (
     <div className="flex items-center gap-2 font-mono text-xs text-[hsl(var(--muted-foreground))]">
@@ -43,7 +46,7 @@ export function NowStrip() {
       <span>
         last pushed to{' '}
         <a
-          href={c.url}
+          href={safeUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="text-[hsl(var(--accent))] hover:underline"

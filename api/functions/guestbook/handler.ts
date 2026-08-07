@@ -1,5 +1,5 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
-import { randomUUID } from 'node:crypto'
+import { randomUUID, timingSafeEqual } from 'node:crypto'
 import { PutCommand, QueryCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb'
 import { ddb, TABLE } from '../../shared/dynamo.js'
 import { ok, err } from '../../shared/response.js'
@@ -55,6 +55,14 @@ export function validateSubmission(input: {
     return { valid: false, error: 'Please keep it civil — message rejected', status: 400 }
   }
   return { valid: true, name, message }
+}
+
+// Constant-time string compare for the admin token, so response timing can't
+// leak how many leading bytes matched. (issue #113)
+export function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a)
+  const bb = Buffer.from(b)
+  return ab.length === bb.length && timingSafeEqual(ab, bb)
 }
 
 function isConditionalCheckFailed(e: unknown): boolean {
@@ -134,8 +142,8 @@ async function createEntry(event: APIGatewayProxyEventV2): Promise<APIGatewayPro
 async function deleteEntry(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
   const token = adminToken()
   if (!token) return err('Deletion is disabled', 403)
-  const provided = event.headers?.['x-admin-token'] ?? event.headers?.['X-Admin-Token']
-  if (provided !== token) return err('Unauthorized', 401)
+  const provided = event.headers?.['x-admin-token'] ?? event.headers?.['X-Admin-Token'] ?? ''
+  if (!safeEqual(provided, token)) return err('Unauthorized', 401)
 
   const { id, createdAt } = JSON.parse(event.body ?? '{}')
   if (!id || !createdAt) return err('id and createdAt are required', 400)

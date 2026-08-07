@@ -149,6 +149,31 @@ resource "aws_apigatewayv2_stage" "prod" {
   api_id      = aws_apigatewayv2_api.portfolio.id
   name        = "$default"
   auto_deploy = true
+
+  # HTTP APIs have no throttling unless set — without this, every route is
+  # reachable at the account soft limit (~10k rps). A global backstop protects
+  # all routes; the cost-bearing POSTs (chat → Anthropic, contact → SES) get
+  # much tighter caps. These are volumetric guardrails on top of the per-IP /
+  # monthly-token application limits, not a replacement for them. (issue #101)
+  default_route_settings {
+    throttling_burst_limit = 20
+    throttling_rate_limit  = 20
+  }
+
+  route_settings {
+    route_key              = "POST /api/chat"
+    throttling_burst_limit = 3
+    throttling_rate_limit  = 2
+  }
+
+  route_settings {
+    route_key              = "POST /api/contact"
+    throttling_burst_limit = 3
+    throttling_rate_limit  = 2
+  }
+
+  # route_settings reference route keys that must already exist in the stage.
+  depends_on = [aws_apigatewayv2_route.routes]
 }
 
 resource "aws_apigatewayv2_integration" "functions" {

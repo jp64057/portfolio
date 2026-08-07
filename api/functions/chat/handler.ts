@@ -148,8 +148,17 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
       messages,
     })
 
+    // Record usage reliably (awaited) so the monthly cap can't be silently
+    // overrun by dropped writes. Its own try/catch keeps a DynamoDB blip from
+    // turning a successful answer into an error for the visitor. The ADD is
+    // atomic; the pre-call cap check (Get) is a soft guard, so a small overshoot
+    // under concurrency is possible and acceptable (bounded by max_tokens). #105
     const usage = response.usage
-    void recordUsage((usage?.input_tokens ?? 0) + (usage?.output_tokens ?? 0)).catch(() => {})
+    try {
+      await recordUsage((usage?.input_tokens ?? 0) + (usage?.output_tokens ?? 0))
+    } catch (e) {
+      console.error('chat usage record failed', e)
+    }
 
     const reply = response.content
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')

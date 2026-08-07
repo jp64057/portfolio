@@ -12,9 +12,15 @@ locals {
   # it needs a longer timeout (kept < API Gateway's 30s cap) and more memory.
   # `now` makes up to two sequential GitHub API calls (events + commit), which
   # can exceed the 3s default; give it more headroom + memory (faster CPU/net).
+  #
+  # reserved_concurrency caps a function's max simultaneous executions. The
+  # cost-bearing endpoints (chat → paid Anthropic calls, contact → SES) get a
+  # small cap so a burst can't fan out into unbounded parallel invocations /
+  # cost; others stay unreserved (-1). (issue #106)
   function_overrides = {
-    chat = { timeout = 29, memory_size = 256 }
-    now  = { timeout = 10, memory_size = 256 }
+    chat    = { timeout = 29, memory_size = 256, reserved_concurrency = 3 }
+    now     = { timeout = 10, memory_size = 256 }
+    contact = { reserved_concurrency = 3 }
   }
 }
 
@@ -92,7 +98,9 @@ resource "aws_lambda_function" "functions" {
   handler       = "handler.handler"
   timeout       = try(local.function_overrides[each.key].timeout, 3)
   memory_size   = try(local.function_overrides[each.key].memory_size, 128)
-  filename      = "${path.root}/../api/dist/${each.key}/handler.zip"
+  # -1 = unreserved (no cap). chat/contact get a small cap (see function_overrides).
+  reserved_concurrent_executions = try(local.function_overrides[each.key].reserved_concurrency, -1)
+  filename                       = "${path.root}/../api/dist/${each.key}/handler.zip"
 
   # Placeholder — the CI/CD pipeline updates the code on every deploy.
   # The first `terraform apply` will fail if dist/ doesn't exist yet;

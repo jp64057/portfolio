@@ -39,13 +39,23 @@ describe('visitor-counter handler', () => {
     const res = (await handler(event({ page: '/stats' }))) as { statusCode: number; body: string }
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body).count).toBe(42)
-    expect(mockSend).toHaveBeenCalledTimes(1)
+    // Primary per-page counter + the shared-PK stats aggregate.
+    expect(mockSend).toHaveBeenCalledTimes(2)
   })
 
   it('defaults to "/" when page is omitted', async () => {
     const res = (await handler(event({}))) as { statusCode: number }
     expect(res.statusCode).toBe(200)
-    expect(mockSend).toHaveBeenCalledTimes(1)
+    expect(mockSend).toHaveBeenCalledTimes(2)
+  })
+
+  it('still succeeds when the best-effort aggregate write fails', async () => {
+    mockSend
+      .mockResolvedValueOnce({ Attributes: { count: 7 } }) // primary
+      .mockRejectedValueOnce(new Error('aggregate blip')) // aggregate
+    const res = (await handler(event({ page: '/' }))) as { statusCode: number; body: string }
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).count).toBe(7)
   })
 
   it('rejects an invalid page without writing to DynamoDB', async () => {

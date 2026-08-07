@@ -3,9 +3,30 @@ import { UpdateCommand } from '@aws-sdk/lib-dynamodb'
 import { ddb, TABLE } from '../../shared/dynamo.js'
 import { ok, err } from '../../shared/response.js'
 
+// `page` becomes part of the DynamoDB partition key (visitor_count::<page>), so
+// it MUST be bounded: without this, arbitrary/random values let anyone create
+// unbounded distinct items, forging counts and inflating the cost of the
+// /api/stats table scan. The frontend only ever sends a Next.js pathname
+// (usePathname()), e.g. "/" or "/stats" — this pattern accepts those and
+// rejects everything else. See issue #98.
+const PAGE_RE = /^\/[A-Za-z0-9/_-]{0,64}$/
+
+export function validatePage(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+  return PAGE_RE.test(raw) ? raw : null
+}
+
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
-  const body = JSON.parse(event.body ?? '{}')
-  const page: string = body.page ?? '/'
+  let body: { page?: unknown }
+  try {
+    body = JSON.parse(event.body ?? '{}')
+  } catch {
+    return err('Invalid request body', 400)
+  }
+
+  // Default to "/" when omitted; reject anything that isn't a valid path.
+  const page = event.body && 'page' in body ? validatePage(body.page) : '/'
+  if (page === null) return err('Invalid page', 400)
 
   const result = await ddb.send(
     new UpdateCommand({

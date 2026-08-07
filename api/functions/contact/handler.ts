@@ -39,13 +39,52 @@ export async function verifyTurnstile(token: unknown, ip: string): Promise<boole
   }
 }
 
+export const MAX_NAME = 100
+export const MAX_MESSAGE = 5000
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export type ContactValidation =
+  | { valid: true; name: string; email: string; message: string }
+  | { valid: false; error: string }
+
+// Validate + normalize the submission. Length caps stop multi-megabyte emails;
+// type checks stop non-string fields from throwing inside SES. (issue #112)
+export function validateContact(body: {
+  name?: unknown
+  email?: unknown
+  message?: unknown
+}): ContactValidation {
+  const name = typeof body.name === 'string' ? body.name.trim() : ''
+  const email = typeof body.email === 'string' ? body.email.trim() : ''
+  const message = typeof body.message === 'string' ? body.message.trim() : ''
+  if (name.length < 1 || name.length > MAX_NAME) {
+    return { valid: false, error: `Name must be 1–${MAX_NAME} characters` }
+  }
+  if (email.length > 254 || !EMAIL_RE.test(email)) {
+    return { valid: false, error: 'A valid email is required' }
+  }
+  if (message.length < 1 || message.length > MAX_MESSAGE) {
+    return { valid: false, error: `Message must be 1–${MAX_MESSAGE} characters` }
+  }
+  return { valid: true, name, email, message }
+}
+
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
-  const body = JSON.parse(event.body ?? '{}')
-  const { name, email, message, honeypot, turnstileToken } = body
+  let body: { honeypot?: unknown; turnstileToken?: unknown; name?: unknown; email?: unknown; message?: unknown }
+  try {
+    body = JSON.parse(event.body ?? '{}')
+  } catch {
+    return err('Invalid request body', 400)
+  }
+  const { honeypot, turnstileToken } = body
 
   // Bot trap: honeypot should always be empty for real users. Ack silently so
   // bots don't learn they were filtered.
   if (honeypot) return ok({ received: true })
+
+  const check = validateContact(body)
+  if (!check.valid) return err(check.error, 400)
+  const { name, email, message } = check
 
   const ip = clientIp(event)
 
@@ -79,21 +118,26 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     throw e
   }
 
-  await ses.send(
-    new SendEmailCommand({
-      Source: FROM,
-      ReplyToAddresses: [email],
-      Destination: { ToAddresses: [TO] },
-      Message: {
-        Subject: { Data: `Portfolio contact from ${name}` },
-        Body: {
-          Text: {
-            Data: `From: ${name} <${email}>\n\n${message}`,
+  try {
+    await ses.send(
+      new SendEmailCommand({
+        Source: FROM,
+        ReplyToAddresses: [email],
+        Destination: { ToAddresses: [TO] },
+        Message: {
+          Subject: { Data: `Portfolio contact from ${name}` },
+          Body: {
+            Text: {
+              Data: `From: ${name} <${email}>\n\n${message}`,
+            },
           },
         },
-      },
-    }),
-  )
+      }),
+    )
+  } catch (e) {
+    console.error('contact SES send failed', e)
+    return err('Could not send your message right now — please try again later.')
+  }
 
   return ok({ received: true })
 }

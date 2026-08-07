@@ -49,3 +49,9 @@ variable "chat_model" {
   default     = "claude-haiku-4-5"
   description = "Claude model ID for the résumé chatbot (claude-haiku-4-5 for low cost; claude-opus-4-8 for a more capable, pricier bot)."
 }
+
+variable "allowed_origins" {
+  type        = list(string)
+  default     = ["*"]
+  description = "CORS allow-list for the API. The app calls /api/* same-origin behind CloudFront, so pin this to the site origin(s) rather than '*' to deny cross-origin browser abuse of the cost-bearing endpoints. (issue #104)"
+}

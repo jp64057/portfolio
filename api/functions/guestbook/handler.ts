@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { PutCommand, QueryCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb'
 import { ddb, TABLE } from '../../shared/dynamo.js'
 import { ok, err } from '../../shared/response.js'
+import { clientIp } from '../../shared/request.js'
 
 const PK = 'guestbook'
 const ENTRY_PREFIX = 'entry::'
@@ -88,7 +89,7 @@ async function createEntry(event: APIGatewayProxyEventV2): Promise<APIGatewayPro
 
   // Per-IP rate limit. `expiresAt` gates the logical window so a lagging TTL
   // sweep can't lock a visitor out beyond the window; `ttl` is just cleanup.
-  const ip = event.requestContext?.http?.sourceIp ?? 'unknown'
+  const ip = clientIp(event)
   const now = Math.floor(Date.now() / 1000)
   try {
     await ddb.send(

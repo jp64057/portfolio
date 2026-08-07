@@ -28,8 +28,15 @@ afterEach(() => {
 })
 
 describe('verifyTurnstile', () => {
-  it('passes through when no secret is configured', async () => {
+  it('passes through when no secret is configured locally (not in Lambda)', async () => {
+    delete process.env.AWS_LAMBDA_FUNCTION_NAME
     expect(await verifyTurnstile('anything', '1.2.3.4')).toBe(true)
+  })
+
+  it('fails CLOSED when no secret is configured but running in Lambda', async () => {
+    process.env.AWS_LAMBDA_FUNCTION_NAME = 'portfolio-contact'
+    expect(await verifyTurnstile('anything', '1.2.3.4')).toBe(false)
+    delete process.env.AWS_LAMBDA_FUNCTION_NAME
   })
 
   it('fails a missing/empty token when a secret is set', async () => {

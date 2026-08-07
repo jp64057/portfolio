@@ -16,7 +16,17 @@ const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverif
 // (local/dev), verification is skipped so the form still works.
 export async function verifyTurnstile(token: unknown, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY ?? ''
-  if (!secret) return true
+  if (!secret) {
+    // Fail CLOSED in a real deployment: if the secret is somehow unset in
+    // Lambda, reject rather than silently letting every submission through.
+    // Only skip verification locally (sam local / unit tests), where the
+    // function name env var is absent. (issue #111)
+    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      console.error('TURNSTILE_SECRET_KEY is unset in Lambda — failing closed')
+      return false
+    }
+    return true
+  }
   if (typeof token !== 'string' || token.length === 0) return false
   try {
     const form = new URLSearchParams({ secret, response: token, remoteip: ip })

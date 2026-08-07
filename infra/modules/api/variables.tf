@@ -31,8 +31,9 @@ variable "guestbook_admin_token" {
 variable "turnstile_secret_key" {
   type      = string
   sensitive = true
-  # Cloudflare's public "always passes" test secret — replace with a real key.
-  default     = "1x0000000000000000000000000000000AA"
+  # Empty by default — no insecure "always passes" test secret. When empty the
+  # contact handler fails CLOSED in Lambda. Supply the real key via TF_VAR.
+  default     = ""
   description = "Cloudflare Turnstile secret key for verifying contact-form CAPTCHA tokens."
 }
 

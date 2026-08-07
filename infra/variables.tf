@@ -47,10 +47,10 @@ variable "guestbook_admin_token" {
 }
 
 variable "turnstile_secret_key" {
-  description = "Cloudflare Turnstile secret key for the contact-form CAPTCHA (defaults to CF's test secret)."
+  description = "Cloudflare Turnstile secret key for the contact-form CAPTCHA. Empty = no CAPTCHA; the handler then fails CLOSED in Lambda (rejects submissions) rather than silently passing. Set the real key via TF_VAR_turnstile_secret_key (CI: GH secret)."
   type        = string
   sensitive   = true
-  default     = "1x0000000000000000000000000000000AA"
+  default     = ""
 }
 
 variable "anthropic_api_key" {

@@ -9,4 +9,13 @@ const compat = new FlatCompat({ baseDirectory: __dirname })
 
 export default [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  {
+    rules: {
+      // Surface every dangerouslySetInnerHTML so new uses get a security look.
+      // The two known-safe uses in app/layout.tsx (static JSON-LD + the accent
+      // bootstrap script) are intentional; keep untrusted data out of this sink.
+      // (issue #117)
+      'react/no-danger': 'warn',
+    },
+  },
 ]

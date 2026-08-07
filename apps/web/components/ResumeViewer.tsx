@@ -100,9 +100,12 @@ export function ResumeViewer() {
     }
   }, [open])
 
-  // Render every page whenever the document or zoom changes.
+  // Render every page whenever the viewer opens or the document / zoom changes.
+  // `open` is a dependency because closing unmounts the <canvas> elements, so a
+  // reopen mounts fresh (blank) ones that must be redrawn — even though status /
+  // numPages are unchanged from the first open (the PDF stays cached).
   useEffect(() => {
-    if (status !== 'ready' || !pdfRef.current) return
+    if (!open || status !== 'ready' || !pdfRef.current) return
     const doc = pdfRef.current
     const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2)
     let cancelled = false
@@ -139,7 +142,7 @@ export function ResumeViewer() {
       cancelled = true
       tasks.forEach((t) => t.cancel())
     }
-  }, [status, scale, numPages])
+  }, [open, status, scale, numPages])
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     // Escape is handled at the document level (see effect above).

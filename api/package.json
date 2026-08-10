@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
-    "@aws-sdk/client-dynamodb": "^3.1095.0",
-    "@aws-sdk/client-ses": "^3.1095.0",
-    "@aws-sdk/lib-dynamodb": "^3.1095.0"
+    "@aws-sdk/client-dynamodb": "^3.1105.0",
+    "@aws-sdk/client-ses": "^3.1105.0",
+    "@aws-sdk/lib-dynamodb": "^3.1105.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.149",

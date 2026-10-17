@@ -22,7 +22,7 @@
     "react-hook-form": "^7.83.0",
     "recharts": "^2.15.3",
     "tailwind-merge": "^3.3.0",
-    "zod": "^3.25.51"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",
